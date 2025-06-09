@@ -1,0 +1,3 @@
+{
+  "python.defaultInterpreterPath": "C:\Users\AUSM504495\AppData\Local\miniforge3\envs\PSI\python.exe"
+}
