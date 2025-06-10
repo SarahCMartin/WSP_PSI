@@ -1,5 +1,5 @@
 import Common
-import numpy
+import numpy as np
 
 def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_model, Ax_model, PhaseNo, D, su_profile, su_mudline, su_inv, z_su_inv, delta_su, St, z, prev_calc_depths, prev_su_inc):
     """This function turns the input linear or bi-linear strength profile into
@@ -8,7 +8,7 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
 
     ###########################################################################
     # Constants, Fixed Inputs or Input Adjustments
-    max_depth = Common.round_up(max(2*D,1),1) # considering calculation for a maximum depth of either 1m of 2D (below pipe invert if relevant, adjusted for in next step), whichever is greater, rounding up to the nearest 0.1m for subsequent increment definition
+    max_depth = Common.round_up(max(2*D,1),1) # considering calculation for a maximum depth of either 1m or 2D (below pipe invert if relevant, adjusted for in next step), whichever is greater, rounding up to the nearest 0.1m for subsequent increment definition
     if PhaseNo == 1 or PhaseNo == 5: # profile to be used for as-laid embedment calculation and soil either side of pipe for lateral resistance, so needs to start from mudline
         calc_depths = Common.float_range(0,max_depth,0.02) # making 0.02 m increments
     else: # profile to be used for consolidation calculations at different stages
@@ -52,7 +52,7 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
 
     return [calc_depths, su_inc]
 
-def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv, SHANSEP_S, SHANSEP_m, z, B, prev_yield_stress, prev_vert_eff, int_switch):
+def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv, SHANSEP_S, SHANSEP_m, D, z, B, prev_yield_stress, prev_vert_eff, int_switch):
     """This function updates the undrained strength profile to account for 
     consolidation where time passes between installation, hydrotesting and 
     operation based on input variables and fixed correlations (i.e. stress 
@@ -67,9 +67,21 @@ def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv,
     z_B_ratio = [0.0, 0.28, 0.48, 0.65, 0.85, 1.2, 1.5, 2.1, 3.0, 4.2, 6.35, 7.9, 10.75]
     depth_dist = [x*B + z for x in z_B_ratio] # multiplying by contact width to change depth ratios to actual depths, adding initial embedment so the maximum occurs at invert depth, though the need for this simplification is a shortcoming of using the strip footing formulation
 
-    # Degree of consolidation distribution, taken from strip footing diagram in Krost et al 2011
-    deg_consol = [0, 0.01, 0.037, 0.135, 0.39, 0.695, 0.975, 1]
-    T = [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 250]
+    # Degree of PWP dissipation constants (to fit Krost et al 2011 for strip footing at 0.2D (shallowest with good match and suitable low value for our data) to 0.5D embedment (deepest available), see excel 'Consolidation Equations')
+    T50_z_D_0_2 = 0.2
+    n_z_D_0_2 = 0.6
+    T50_z_D_0_5 = 0.12
+    n_z_D_0_5 = 0.48
+    # Linearly varying between 0.2 and 0.5D embedment or applying these values as constant either side
+    if z/D >= 0.5:
+        T50 = T50_z_D_0_5
+        n = n_z_D_0_5
+    elif z/D > 0.2 and z/D < 0.5:
+        T50 = np.interp(z/D, [0.2, 0.5], [T50_z_D_0_2, T50_z_D_0_5])
+        n = np.interp(z/D, [0.2, 0.5], [n_z_D_0_2, n_z_D_0_5])
+    else: # z/D <= 0.2
+        T50 = T50_z_D_0_2
+        n = n_z_D_0_2
 
     ###########################################################################
     # Calculating change in total stress at each depth increment
@@ -79,10 +91,12 @@ def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv,
 
     ###########################################################################
     # Calculating degree of consolidation at each depth increment
-    T_inc = [cv*(t/(x**2)) for x in calc_depths]
-    deg_consol_inc = Common.linear_extrapolate(numpy.log10(T_inc), numpy.log10(T), deg_consol)
-    deg_consol_inc[deg_consol_inc>1] = 1
-    deg_consol_inc[deg_consol_inc<0] = 0 # replaces -Inf results for time = 0
+    T_inc = cv*(t/(D**2))
+    deg_consol_inc = 1 - np.exp(-1*np.log(2)*(T_inc/T50)**n)
+    if deg_consol_inc > 1: # replaces any erroneous result above 1
+        deg_consol_inc = 1
+    elif deg_consol_inc < 0:
+        deg_consol_inc = 0 # replaces -Inf results for time = 0
 
     ###########################################################################
     # Calculating excess pore water pressure and effective stress at each depth increment after pipe loading for time t
@@ -91,20 +105,20 @@ def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv,
     else: # int_swicth == 1, pipe-soil interface condition
         vert_eff_soil = [gamma_sub*(x-z) for x in calc_depths] # assumed no soil weight above pipe invert impacting interface strength
 
-    if isinstance(prev_vert_eff, numpy.ndarray): # consolidation stages after the first have initial stress coming from end of previous stage
-        pwp_ini = vert_new - (prev_vert_eff-numpy.array(vert_eff_soil))
+    if isinstance(prev_vert_eff, np.ndarray): # consolidation stages after the first have initial stress coming from end of previous stage
+        pwp_ini = vert_new - (prev_vert_eff-np.array(vert_eff_soil))
         pwp_ini = [max(x, 0) for x in pwp_ini]
         vert_eff_ini = [x + pressure_pipe - y for x,y in zip(vert_eff_soil, pwp_ini)]
     else: # first consolidation stage so no previous loading to consider
         pwp_ini = vert_new
         vert_eff_ini = vert_eff_soil
 
-    pwp_fin = (1-deg_consol_inc)*pwp_ini
+    pwp_fin = (1-deg_consol_inc)*np.array(pwp_ini)
     vert_eff_fin = vert_eff_soil + vert_new - pwp_fin
 
     ###########################################################################
     # Calculating consolidated undrained shear strength profile after pipe loading for time t
-    if isinstance(prev_yield_stress, numpy.ndarray): # consolidation stages after the first have initial yield stress coming from end of previous stage
+    if isinstance(prev_yield_stress, np.ndarray): # consolidation stages after the first have initial yield stress coming from end of previous stage
         yield_stress_ini = prev_yield_stress
     else: # first consolidation stage so no previous loading to consider
         if int_switch == 0: # soil-soil behaviour
@@ -117,7 +131,7 @@ def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv,
 
     yield_stress = [max(x,y) for x,y in zip(yield_stress_ini,vert_eff_fin)]
     YSR_fin = yield_stress/vert_eff_fin
-    YSR_fin[numpy.isnan(YSR_fin)] = 1 # replaces NaN results coming from a vertical effective stress of zero where time is zero with 1 to accurately get 0 increasing in interface strength at pipe invert
+    YSR_fin[np.isnan(YSR_fin)] = 1 # replaces NaN results coming from a vertical effective stress of zero where time is zero with 1 to accurately get 0 increasing in interface strength at pipe invert
     su_consol = (SHANSEP_S*YSR_fin**SHANSEP_m)*vert_eff_fin
 
     return [su_consol, yield_stress, vert_eff_fin]

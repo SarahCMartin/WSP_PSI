@@ -14,6 +14,7 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
 
         # Defining inputs
         su_active = np.interp(z - min(z,D)/2, insitu_calc_depths, lat_su_inc) # average undrained shear strength in active failure zone, DNV notes typically taken at z/2 (adjustment as noted above); profiles have been developed with a lateral sensitivity factor to reflect partial remoulding of the soil either side of the pipe
+        # print(su_active)
         su_passive = su_active # average undrained shear strength in passive failure, taken as the same as active in this case, notes as per active
         gamma_rate = 1
         if int_vert_eff_max == int_vert_eff:
@@ -24,6 +25,7 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
         # Calculating breakout resistance from components
         # Equation separated into steps from suOC to F to ff as SAFEBUCK/DNV formula doesn't account for W_op not being fully transferred to the soilimmediately, and therefore over-estimates strength as W_op > W_empty ?> W_tranferred to soil during the previous consolidation stages
         int_su_lat_brk = int_SHANSEP_S*(OCR**int_SHANSEP_m)*int_vert_eff # strength using SHANSEP approach and vertical effective stress at the start of operation based omn the previous consolidation stages
+        # print(int_su_lat_brk)
         F_lat_brk_friction = int_su_lat_brk*gamma_rate*B # horizontal friction component of resistance per m length
         if Lat_brk_suction == 0: # not allowing for suction at the rear of the pipe
             F_lat_brk_remain = min(z,D)*(kp*su_passive + 0.5*gamma_sub*z)*gamma_rate # first z replaced with min(z,D) as noted above, second z remains as it relates to the weight of soil above the base of the pipe
@@ -120,7 +122,7 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
     # No valid lateral breakout model selected
     else:
         ff_lat_brk = []
-        print("Please select a valid model for lateral brekout resistance calculation.")
+        print("Please select a valid model for lateral breakout resistance calculation.")
 
     ###########################################################################
     # Lateral breakout mobilisation displacements from DNVGL-RP-F114, Table 4-4
@@ -148,7 +150,13 @@ def latres(Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_ve
     elif Lat_res_model == 10:
         # See notes for DNV D lat brk Model 1 above in latbrk function, same calculation so passing to that function with relevant inputs for the residual scenario, i.e. residual z and B, both strength increase profiles are the insitu as material either side of pipe has not been disturbed during laying as assumed for latbrk
         [ff_lat_res, _] = latbrk(10, [], D, W, [], [], [], [], [], [], [], [], gamma_sub, [], [], [], [], delta, z_res, [])
-        
+
+    ###########################################################################
+    # No valid lateral residual model selected
+    else:
+        ff_lat_res = []
+        print("Please select a valid model for lateral residual resistance calculation.")
+
     ###########################################################################
     # Lateral residual mobilisation displacements from DNVGL-RP-F114, Table 4-5
     yLE_lat_res = 0.6*D
@@ -163,10 +171,20 @@ def axial(Ax_model, D, W, alpha, int_vert_eff_max, int_vert_eff, int_SHANSEP_S, 
     chosen method with embedment and strength from previous 
     calculation stages."""
     
+    # Finding wedging factor which is used in both subsequent methods (beta formulation from SAFEBUCK Section C.4.3 as this includes cutoff which DNV doesn't list but is required for sensible results)
+    if z/D > 1: # beta constant at 180deg if pipe fully below mudline
+        beta = np.pi
+    else: # z < D/2, embedded to less than pipe centreline
+        beta = np.acos(1-(2*z/D))
+            
+    if beta > np.pi/2: # limit for wedging factor formula in SAFEBUCK, corresponds to z > D/2, DNV notes wedging factor constant above this embedment, so beta set to 90deg (value at z = D/2)
+        beta = np.pi/2
+    
+    wedge = 2*np.sin(beta)/(beta+np.sin(beta)*np.cos(beta))
+
     ###########################################################################
     # SAFEBUCK / DNVGL-RP-F114 Undrained Model, directly using interface properties per SAFEBUCK but rate effects per DNV, adjustment to interface strength as descriped in lateral breakout section to allow for partial consolidation
     if Ax_model == 0:
-
         # Defining inputs
         gamma_rate = 1
         if int_vert_eff_max == int_vert_eff:
@@ -174,19 +192,26 @@ def axial(Ax_model, D, W, alpha, int_vert_eff_max, int_vert_eff, int_SHANSEP_S, 
         else:
             OCR = int_vert_eff_max/int_vert_eff # previous maximum vertical effective stress over current (for immediate undrained response this is pre-operational vertical effective stress as consolidation will not have occurred yet under the slightly higher operational weight)
 
-        # Finding wedging factor (beta formulation from SAFEBUCK Section C.4.3 as this includes cutoff which DNV doesn't list but is required for sensible results)
-        if z/D > 1: # beta constant at 180deg if pipe fully below mudline
-            beta = np.pi
-        else: # z < D/2, embedded to less than pipe centreline
-            beta = np.acos(1-(2*z/D))
-            
-        if beta > np.pi/2: # limit for wedging factor formula in SAFEBUCK, corresponds to z > D/2, DNV notes wedging factor constant above this embedment, so beta set to 90deg (value at z = D/2)
-            beta = np.pi/2
-    
-        wedge = 2*np.sin(beta)/(beta+np.sin(beta)*np.cos(beta))
-
         # Calculating axial resistance
         # Equation separated into steps from suOC to F to ff as SAFEBUCK/DNV formula doesn't account for W_op not being fully transferred to the soilimmediately, and therefore over-estimates strength as W_op > W_empty ?> W_tranferred to soil during the previous consolidation stages
         int_su_ax = int_SHANSEP_S*(OCR**int_SHANSEP_m)*int_vert_eff # strength using SHANSEP approach and vertical effective stress at the start of operation based on the previous consolidation stages
         F_ax = wedge*int_su_ax*gamma_rate*B # resistance per m length (assuming it only acts over the horizontal distance B and not the full contact length; the difference being partially accounted for in the wedging factor)
         ff_ax = F_ax/W # friction factor is ratio of resistance to vertical force (W_op)
+
+    elif Ax_model == 10:
+        ff_ax = wedge*np.tan(np.deg2rad(delta))
+
+    ###########################################################################
+    # No valid axial model selected
+    else:
+        ff_ax = []
+        print("Please select a valid model for axial resistance calculation.")
+
+    ###########################################################################
+    # Axial mobilisation displacements from DNVGL-RP-F114, Table 4-2 - assuming bi-linear, i.e. no breakout peak
+    xLE_ax = min(1.25/1000, 0.0025*D)
+    xBE_ax = min(5/1000, 0.01*D)
+    xHE_ax = max(250/1000, 0.5*D)
+    x_ax = [xLE_ax, xBE_ax, xHE_ax]
+
+    return [ff_ax, x_ax]

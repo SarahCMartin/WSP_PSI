@@ -16,10 +16,10 @@ d = {} # empty dictionary to take input parameters to add to PSI_case object in 
 d['Emb_aslaid_model'] = 0   # undrained: DNVGL-RP-F114 Model 1 = 0, DNVGL-RP-F114 Model 2/SAFEBUCK = 1
                             # drained: DNVGL-RP-F114 = 10
 d['Emb_hydro_model'] = 0    # as above
-d['Lat_brk_model'] = 10      # undrained: DNVGL-RP-F114 Model 1 = 0, DNVGL-RP-F114 Model 2/SAFEBUCK = 1, Merifield et al 2008/2009 = 2
+d['Lat_brk_model'] = 0      # undrained: DNVGL-RP-F114 Model 1 = 0, DNVGL-RP-F114 Model 2/SAFEBUCK = 1, Merifield et al 2008/2009 = 2
                             # drained: DNVGL-RP-F114 Model 1 = 10, DNVGL-RP-F114 Model 2/SAFEBUCK = 11
 d['Lat_brk_suction'] = 0    # switch for suction at rear of pipe, not allowing = 0, allowing = 1 (relevant for lateral breakout undrained DNVGL-RP-F114 Model 1)
-d['Lat_res_model'] = 10      # undrained: modified DNV = 0 (using instantaneous embedment into undisturbed soil profile then same approach as DNVGL-RP-F114 Lat Brk UD Model 1), DNVGL-RP-F114/SAFEBUCK = 1 (note the same approach cannot be used with the Merifield brkout model as the residual embedment corresponds to the vertical bearing capacity such that the envelope gives 0 horizontal capacity)
+d['Lat_res_model'] = 0      # undrained: modified DNV = 0 (using instantaneous embedment into undisturbed soil profile then same approach as DNVGL-RP-F114 Lat Brk UD Model 1), DNVGL-RP-F114/SAFEBUCK = 1 (note the same approach cannot be used with the Merifield brkout model as the residual embedment corresponds to the vertical bearing capacity such that the envelope gives 0 horizontal capacity)
                             # drained: DNVGL-RP-F114 Model 1 = 10, DNVGL-RP-F114 Model 2/SAFEBUCK = 11
 d['Lat_res_suction'] = 0    # switch for suction at rear of pipe, not allowing = 0, allowing = 1 (relevant for lateral residual undrained modified method)
 d['Emb_res_model'] = 0      # as for above embedment models (relevant for lateral residual undrained modified method and drained DNVGL-RP-F114 Model 1)
