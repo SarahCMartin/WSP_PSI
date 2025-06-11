@@ -58,7 +58,7 @@ def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv,
     operation based on input variables and fixed correlations (i.e. stress 
     distribution with depth). It is not used if initial as-laid embedment 
     calculation was drained."""
-
+    
     ###########################################################################
     # Constants, Fixed Inputs or Input Adjustments
     # Stress distribution below pipe invert, taken from strip footing stress bulb diagrams
@@ -118,13 +118,16 @@ def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv,
 
     ###########################################################################
     # Calculating consolidated undrained shear strength profile after pipe loading for time t
-    if isinstance(prev_yield_stress, np.ndarray): # consolidation stages after the first have initial yield stress coming from end of previous stage
+    
+    if len(prev_yield_stress) > 0: # consolidation stages after the first have initial yield stress coming from end of previous stage
         yield_stress_ini = prev_yield_stress
+
     else: # first consolidation stage so no previous loading to consider
         if int_switch == 0: # soil-soil behaviour
             ratio = [x/y for x,y in zip(su_inc,vert_eff_ini)] # consider numpy arrays to improve calculation efficiency
             YSR_ini = [(x/SHANSEP_S)**(1/SHANSEP_m) for x in ratio]
             yield_stress_ini = [x*y for x,y in zip(YSR_ini,vert_eff_ini)]
+
         else: # int_switch == 1, pipe-soil interface behaviour
             YSR_ini = 1 # interface assumed to loose any previous consolidation through the remoulding, therefore behviour here is normally consolidated, note this unlinks the behaviour from the initial interface strength profile
             yield_stress_ini = [YSR_ini*x for x in vert_eff_ini]

@@ -41,7 +41,7 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
         # Note same approach applied to take average strength as z - min(z,D)/2 rather than z/2 to better reflect actual su which would be relevant where z > D; note Merifield et al 2009 assume a uniform su so they do not specify an averaging method
         su_horz = np.interp(z - min(z,D)/2, insitu_calc_depths, lat_su_inc) # for Hmax calc
         su_vert = np.interp(z, hydro_calc_depths, su_consol_preop) # for Vmax calc taking su at pipe invert, no formulation specified as Merifield assume uniform su
-        
+
         Ncmax_smooth = 9.14 # theoretical max from Randolph and Houlsby (1984)
         Ncmax_rough = 11.94 # as above
 
@@ -215,3 +215,144 @@ def axial(Ax_model, D, W, alpha, int_vert_eff_max, int_vert_eff, int_SHANSEP_S, 
     x_ax = [xLE_ax, xBE_ax, xHE_ax]
 
     return [ff_ax, x_ax]
+
+def latcyc(Lat_cyc_model, No_cycles, D, W, z, calc_depths, su_inc, gamma_sub):
+    """This function calculates the lateral resistance after specified 
+    number of cycles (mid-sweep and berm)."""
+
+    ###########################################################################
+    # Initialising matrices for results
+    max_cycles = max(No_cycles)
+    z_track = np.zeros((max_cycles+1, 2)) # recording the evolution of embedment with cycle number, first column for LE, second column for HE
+    z_track[0] = z
+    ff_lat_cyc_track = np.zeros((max_cycles+1, 4)) # recording the evolution of mid-sweep friction factor with cycle number, first column = LE emb+LE resistance, second column = LE emb+HE resistance, third column = HE emb+LE resistance, second column = HE emb+HE resistance
+    ff_lat_cyc_track[0] = 0
+    ff_lat_berm_track = np.zeros((max_cycles+1, 4)) # recording the evolution of berm friction factor (resistance / W_op) with cycle number, first column = LE emb+LE resistance, second column = LE emb+HE resistance, third column = HE emb+LE resistance, second column = HE emb+HE resistance
+    ff_lat_berm_track[0] = 0
+
+    ###########################################################################
+    # SAFEBUCK Undrained Lateral Cyclic Model, Section C.6.4.1
+    if Lat_cyc_model == 0:
+        for cycle in range(max_cycles):
+            # Calculating low estimate of new embedment after each cycle
+            su_z_LE = Common.linear_extrapolate(z_track[cycle, 0], calc_depths, su_inc) # soil undrained shear strength at pipe invert, SAFEBUCK specifies that this is undistrubed strength so taking from the profile adjacent to the pipe
+            delta_z_LE = D*0.01*(W/(su_z_LE*D))**3
+            z_track[cycle+1, 0] = z_track[cycle, 0] + delta_z_LE
+            su_z_LE = Common.linear_extrapolate(z_track[cycle+1, 0], calc_depths, su_inc) # updated soil undrained shear strength at pipe invert to account for additional embedment, SAFEBUCK specifies that this is undistrubed strength so taking from the profile adjacent to the pipe
+        
+            # Calculating low and high estimate mid-sweep friction factor for low estimate embedment
+            if (z_track[cycle+1, 0])/D <= 0.8:
+                ff_lat_cyc_track[cycle+1, 0] = 0.25
+            else: # (z_track[cycle+1, 0])/D > 0.8
+                ff_lat_cyc_track[cycle+1, 0] = 0.25 + 0.3*(z_track[cycle+1, 0]/D - 0.8)
+
+            if (z_track[cycle+1, 0])/D <= 0.7: # changing cut-off for HE to be z/D=0.7 instead of 0.8 to remove jump in values from 0.9 to 1.05 at z/D=0.8 which causes problems later in fitting probability distributions
+                ff_lat_cyc_track[cycle+1, 1] = 0.9
+            else: # (z_track[cycle+1, 0])/D > 0.7 % changing cut-off for HE to be z/D=0.7 instead of 0.8 to remove jump in values from 0.9 to 1.05 at z/D=0.8 which causes problems later in fitting probability distributions
+                ff_lat_cyc_track[cycle+1, 1] = 0.9 + 1.5*(z_track[cycle+1, 0]/D - 0.7)
+
+            # Calculating low and high estimate berm friction factor for low estimate embedment
+            F_lat_berm_LE = 0.9*(z_track[cycle+1, 0]/D)*su_z_LE*D
+            F_lat_berm_HE = 4.5*(z_track[cycle+1, 0]/D)**0.4*su_z_LE*D
+            ff_lat_berm_track[cycle+1, 0] = F_lat_berm_LE/W
+            ff_lat_berm_track[cycle+1, 1] = F_lat_berm_HE/W
+
+            # Calculating high estimate of new embedment after each cycle
+            su_z_HE = Common.linear_extrapolate(z_track[cycle, 1], calc_depths, su_inc) # soil undrained shear strength at pipe invert, SAFEBUCK specifies that this is undistrubed strength so taking from the profile adjacent to the pipe
+            delta_z_HE = D*0.15*(W/(su_z_HE*D))**2
+            z_track[cycle+1, 1] = z_track[cycle, 1] + delta_z_HE
+            su_z_HE = Common.linear_extrapolate(z_track[cycle+1, 1], calc_depths, su_inc) # updated soil undrained shear strength at pipe invert to account for additional embedment, SAFEBUCK specifies that this is undistrubed strength so taking from the profile adjacent to the pipe
+        
+            # Calculating low and high estimate mid-sweep friction factor for high estimate embedment
+            if (z_track[cycle+1, 1])/D <= 0.8:
+                ff_lat_cyc_track[cycle+1, 2] = 0.25
+            else: # (z_track[cycle+1, 1])/D > 0.8
+                ff_lat_cyc_track[cycle+1, 2] = 0.25 + 0.3*(z_track[cycle+1, 1]/D - 0.8)
+
+            if (z_track[cycle+1, 1])/D <= 0.7: # changing cut-off for HE to be z/D=0.7 instead of 0.8 to remove jump in values from 0.9 to 1.05 at z/D=0.8 which causes problems later in fitting probability distributions
+                ff_lat_cyc_track[cycle+1, 3] = 0.9
+            else: # (z_track[cycle+1, 1])/D > 0.7 changing cut-off for HE to be z/D=0.7 instead of 0.8 to remove jump in values from 0.9 to 1.05 at z/D=0.8 which causes problems later in fitting probability distributions
+                ff_lat_cyc_track[cycle+1, 3] = 0.9 + 1.5*(z_track[cycle+1, 1]/D - 0.7)
+
+            # Calculating low and high estimate berm friction factor for high estimate embedment
+            F_lat_berm_LE = 0.9*(z_track[cycle+1, 1]/D)*su_z_HE*D
+            F_lat_berm_HE = 4.5*(z_track[cycle+1, 1]/D)**0.4*su_z_HE*D
+            ff_lat_berm_track[cycle+1, 2] = F_lat_berm_LE/W
+            ff_lat_berm_track[cycle+1, 3] = F_lat_berm_HE/W
+
+    ###########################################################################
+    # White & Cheuk (2008) Model
+    elif Lat_cyc_model == 1:
+
+        # Defining parameters for estimate of berm resistance (eq. 7 in White and Cheuk (2008)) with recommended values from the paper
+        alpha_cyc = 0.015
+        LE_beta_cyc = 2 # White and Cheuk 2008 use 2.3 but give range 2 to 3 so this is being used here for LE to HE
+        HE_beta_cyc = 3
+        delta_cyc = 0.5
+        lambda_cyc = 1
+
+        # Defining LE sweep distance from SAFEBUCK recommendations, section C.6.4.1 (no recommendation on this value is available in White & Cheuk(2008))
+        u_LE = 0.3*D
+        u_HE = 4*D
+
+        for cycle in range(max_cycles):
+            # Calculating low estimate embedment after each cycle from eqn 4 in White and Cheuk (2008), assuming t_plough = delta_z_n
+            su_z_LE = Common.linear_extrapolate(z_track[cycle, 0], calc_depths, su_inc) # soil undrained shear strength at pipe invert, SAFEBUCK specifies that this is undistrubed strength so taking from the profile adjacent to the pipe and taking the same assumption given this equation is of the same form just with different constants
+            delta_z_LE = D*alpha_cyc*(W/(su_z_LE*D))**LE_beta_cyc
+            z_track[cycle+1, 0] = z_track[cycle, 0] + delta_z_LE
+            su_z_LE = Common.linear_extrapolate(z_track[cycle+1, 0], calc_depths, su_inc) # updated soil undrained shear strength at pipe invert to account for additional embedment
+        
+            # Calculating low estimate residual friction factor for z_LE from eq. (3) in White & Cheuk 2008
+            ff_lat_cyc_track[cycle+1, 0] = 1-0.65*(1-np.exp((-1/2)*(su_z_LE/(gamma_sub*D))))
+            ff_lat_cyc_track[cycle+1, 1] = ff_lat_cyc_track[cycle+1, 0] # only 1 equation so applying to both columns so either can be used later
+
+            # Calculating berm resistance from eqn 5 and 6 in White & Cheuk 2008 rearranged for varying t_plough and fixed horizontal sweep, u 
+            # z_LE and u_LE (i.e. low-low, LL for labelling)
+            delta_F_lat_berm_LL = su_z_LE*D*lambda_cyc*(u_LE*delta_z_LE/(D**2))**delta_cyc
+            delta_ff_lat_berm_LL = delta_F_lat_berm_LL/W
+            ff_lat_berm_track[cycle+1, 0] = delta_ff_lat_berm_LL + ff_lat_berm_track[cycle, 0]
+
+            # z_LE and u_HE (i.e. low-high, LH for labelling)
+            delta_F_lat_berm_LH = su_z_LE*D*lambda_cyc*(u_HE*delta_z_LE/(D**2))**delta_cyc
+            delta_ff_lat_berm_LH = delta_F_lat_berm_LH/W
+            ff_lat_berm_track[cycle+1, 1] = delta_ff_lat_berm_LH + ff_lat_berm_track[cycle, 1]
+
+            # Calculating high estimate embedment after each cycle from eqn 4 in White and Cheuk (2008), assuming t_plough = delta_z_n
+            su_z_HE = Common.linear_extrapolate(z_track[cycle, 1], calc_depths, su_inc) # soil undrained shear strength at pipe invert, SAFEBUCK specifies that this is undistrubed strength so taking from the profile adjacent to the pipe and taking the same assumption given this equation is of the same form just with different constants
+            delta_z_HE = D*alpha_cyc*(W/(su_z_HE*D))**HE_beta_cyc
+            z_track[cycle+1, 1] = z_track[cycle, 1] + delta_z_HE
+            su_z_HE = Common.linear_extrapolate(z_track[cycle+1, 1], calc_depths, su_inc) # updated soil undrained shear strength at pipe invert to account for additional embedment
+        
+            # Calculating high estimate residual friction factor for z_HE from eq. (3) in White & Cheuk 2008
+            ff_lat_cyc_track[cycle+1, 2] = 1-0.65*(1-np.exp((-1/2)*(su_z_HE/(gamma_sub*D))))
+            ff_lat_cyc_track[cycle+1, 3] = ff_lat_cyc_track[cycle+1, 2] # only 1 equation so applying to both columns so either can be used later
+
+            # Calculating berm resistance from eqn 5 and 6 in White & Cheuk 2008 rearranged for varying t_plough and fixed horizontal sweep, u 
+            # z_HE and u_LE (i.e. high-low, HL for labelling)
+            delta_F_lat_berm_HL = su_z_HE*D*lambda_cyc*(u_LE*delta_z_HE/(D**2))**delta_cyc
+            delta_ff_lat_berm_HL = delta_F_lat_berm_HL/W
+            ff_lat_berm_track[cycle+1, 2] = delta_ff_lat_berm_HL + ff_lat_berm_track[cycle, 2]
+
+            # z_HE and u_HE (i.e. high-high, HH for labelling)
+            delta_F_lat_berm_HH = su_z_HE*D*lambda_cyc*(u_HE*delta_z_HE/(D**2))**delta_cyc
+            delta_ff_lat_berm_HH = delta_F_lat_berm_HH/W
+            ff_lat_berm_track[cycle+1, 3] = delta_ff_lat_berm_HH + ff_lat_berm_track[cycle, 3]
+
+    ###########################################################################
+    # If no valid lateral cyclic model selected
+    else:
+        ff_lat_cyc = []
+        ff_lat_berm = []
+        z_cyc = []
+        print("Please select a valid model for lateral cyclic resistance calculation.")
+
+    if Lat_cyc_model == 0 or Lat_cyc_model == 1:
+        # print(ff_lat_cyc_track)
+        # print(ff_lat_berm_track)
+        # print(z_track)
+        ff_lat_cyc = ff_lat_cyc_track[No_cycles]
+        ff_lat_berm = ff_lat_berm_track[No_cycles]
+        z_cyc = z_track[No_cycles]
+
+    return [ff_lat_cyc, ff_lat_berm, z_cyc]
+        

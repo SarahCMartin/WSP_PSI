@@ -34,7 +34,7 @@ class PSI:
 
         import PSI_embedment
         [self.z_aslaid, B_aslaid] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_empty, self.alpha, self.EI, self.T0, self.z_ini, self.gamma_sub, insitu_calc_depths, emb_su_inc, self.phi)
-        print(self.z_aslaid, B_aslaid)
+        print("As-laid Embedment:", self.z_aslaid)
         
         ###########################################################################
         # Consolidation Between Pipelay and Hydrotest
@@ -56,7 +56,7 @@ class PSI:
         # Hydrotest Embedment
         PhaseNo = 3
         [self.z_hydro, B_hydro] = PSI_embedment.embedment(PhaseNo, self.Emb_hydro_model, self.D, self.W_hydro, self.alpha, [], [], self.z_aslaid, self.gamma_sub, postlay_calc_depths, su_consol_postlay, self.phi)
-        print(self.z_hydro, B_hydro)
+        print("Hydrotest Embedment:", self.z_hydro)
 
         ###########################################################################
         # Consolidation During Hydrotest and Until Operation (incl. time flooded and empty)
@@ -89,7 +89,6 @@ class PSI:
             int_su_consol_preop = []
         else: #  soil modelled as undrained in at least 1 calculation stage (excl. cyclic where only method available used in-situ strength) so profiles need to be updated for consolidation throughout
             pressure_preop = self.W_empty/B_hydro
-
             [su_consol_preop, yield_stress_preop, vert_eff_preop] = PSI_soils.consolidation(PhaseNo, pressure_preop, self.t_preop, hydro_calc_depths, su_consol_hydro, self.gamma_sub, self.cv, self.SHANSEP_S, self.SHANSEP_m, self.D, self.z_hydro, B_hydro, yield_stress_hydro, vert_eff_hydro, 0)
             [int_su_consol_preop, int_yield_stress_preop, int_vert_eff_preop] = PSI_soils.consolidation(PhaseNo, pressure_preop, self.t_preop, hydro_calc_depths, int_su_consol_hydro, self.gamma_sub, self.cv, self.int_SHANSEP_S, self.int_SHANSEP_m, self.D, self.z_hydro, B_hydro, int_yield_stress_hydro, int_vert_eff_hydro, 1)
             # print(su_consol_preop, yield_stress_preop, vert_eff_preop)
@@ -106,7 +105,7 @@ class PSI:
 
         import PSI_frictionfcts
         [self.ff_lat_brk, self.y_lat_brk] = PSI_frictionfcts.latbrk(self.Lat_brk_model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, self.delta, self.z_hydro, B_hydro)
-        print(self.ff_lat_brk, self.y_lat_brk)
+        print("Lateral Breakout FF:", self.ff_lat_brk, "Lateral Breakout Mobilisation Displacements:", self.y_lat_brk)
 
         ###########################################################################
         # Lateral Residual Resistance
@@ -137,19 +136,20 @@ class PSI:
         else:            
             [self.ff_lat_res, self.y_lat_res] = PSI_frictionfcts.latres(self.Lat_res_model, self.Lat_res_suction, self.D, self.W_op, self.alpha, [], [], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, self.delta, self.z_hydro, self.z_res, B_res)
 
-        print(self.ff_lat_res, self.y_lat_res)
+        print("Lateral Residual FF:", self.ff_lat_res, "Lateral Residual Mobilisation Displacements:", self.y_lat_res)
 
         ###########################################################################
         # Axial Resistance
         PhaseNo = 7
         [self.ff_ax, self.x_ax] = PSI_frictionfcts.axial(self.Ax_model, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], self.int_SHANSEP_S, self.int_SHANSEP_m, self.delta, self.z_hydro, B_hydro)
-        print(self.ff_ax, self.x_ax)
+        print("Axial FF:", self.ff_ax, "Axial Mobilisation Displacements:", self.x_ax)
 
         ###########################################################################
-        # Lateral Cyclic Resistance
+        # Lateral Cyclic Resistance 
+        # NOTE FOR SAFEBUCK METHOD IT IS DEBATABLE WHETHER INITIAL OR RESIDUAL EMBEDMENT SHOULD BE USED
         PhaseNo = 8
-        [self.ff_lat_cyc, self.ff_lat_berm, self.z_cyc] = PSI_frictionfcts.latcyc(self.Lat_cyc_model, self.No_cycles, self.D, self.W_op, self.z_hydro, insitu_calc_depths, insitu_su_inc)
-        print(self.ff_lat_cyc, self.ff_lat_berm, self.z_cyc)
+        [self.ff_lat_cyc, self.ff_lat_berm, self.z_cyc] = PSI_frictionfcts.latcyc(self.Lat_cyc_model, self.No_cycles, self.D, self.W_op, self.z_res, insitu_calc_depths, insitu_su_inc, self.gamma_sub)
+        print("Cyclic Mid-Sweep FF:", self.ff_lat_cyc, "Cyclic Berm FF:", self.ff_lat_berm, "Cyclic Embedment:", self.z_cyc)
 
         ###########################################################################
         # Producing figures of undrained shear strength evolution
