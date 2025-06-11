@@ -166,6 +166,7 @@ def latres(Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_ve
 
     return [ff_lat_res, y_lat_res]
 
+
 def axial(Ax_model, D, W, alpha, int_vert_eff_max, int_vert_eff, int_SHANSEP_S, int_SHANSEP_m, delta, z, B):
     """This function calculates the axial friction factors using the 
     chosen method with embedment and strength from previous 
@@ -215,6 +216,7 @@ def axial(Ax_model, D, W, alpha, int_vert_eff_max, int_vert_eff, int_SHANSEP_S, 
     x_ax = [xLE_ax, xBE_ax, xHE_ax]
 
     return [ff_ax, x_ax]
+
 
 def latcyc(Lat_cyc_model, No_cycles, D, W, z, calc_depths, su_inc, gamma_sub):
     """This function calculates the lateral resistance after specified 
@@ -291,9 +293,9 @@ def latcyc(Lat_cyc_model, No_cycles, D, W, z, calc_depths, su_inc, gamma_sub):
         delta_cyc = 0.5
         lambda_cyc = 1
 
-        # Defining LE sweep distance from SAFEBUCK recommendations, section C.6.4.1 (no recommendation on this value is available in White & Cheuk(2008))
-        u_LE = 0.3*D
-        u_HE = 4*D
+        # Defining sweep distance bounds from SAFEBUCK
+        u_LE = 0.3*D # LE sweep distance from SAFEBUCK recommendations, section C.6.4.1 (no recommendation on this value is available in White & Cheuk(2008))
+        u_HE = 4*D # HE sweep distance from SAFEBUCK
 
         for cycle in range(max_cycles):
             # Calculating low estimate embedment after each cycle from eqn 4 in White and Cheuk (2008), assuming t_plough = delta_z_n

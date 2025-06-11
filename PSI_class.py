@@ -16,12 +16,14 @@ class PSI:
         self.ff_lat_berm = ff_lat_berm
         self.z_cyc = z_cyc
 
+
     def __str__(self):
         temp = vars(self)
         output = ''
         for item in temp:
             output += str(item)+' = '+str(temp[item])+'\n'
         return output
+
 
     def PSI_master(self):
         """This functions runs all the components of the PSI and produces relevant outputs."""

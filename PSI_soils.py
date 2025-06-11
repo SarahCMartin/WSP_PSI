@@ -52,6 +52,7 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
 
     return [calc_depths, su_inc]
 
+
 def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv, SHANSEP_S, SHANSEP_m, D, z, B, prev_yield_stress, prev_vert_eff, int_switch):
     """This function updates the undrained strength profile to account for 
     consolidation where time passes between installation, hydrotesting and 

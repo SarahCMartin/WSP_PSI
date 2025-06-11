@@ -132,6 +132,7 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
     
     return z, B
 
+
 def emb_geometry(z, D):
     if z >= D/2:
         B = D
@@ -141,6 +142,7 @@ def emb_geometry(z, D):
         Abm = (math.asin(B/D))*(D**2)/4 - B*(D/4)*math.cos(math.asin(B/D))
     return (B, Abm)
 
+
 def depth_effects(z, D, B):
     # Reference level for depth effects, z_su0 (m)
     if z < (D/2)*(1-math.sqrt(2)/2):
@@ -148,6 +150,7 @@ def depth_effects(z, D, B):
     else:
         z_su0 = z + (D/2)*(math.sqrt(2)-1) - (B/2)
     return z_su0
+
 
 def bearing_capacity_0(su_z, su_mudline, su0, z, z_su0, alpha, B, D, gamma_sub, Abm):
     delta_su = (su_z - su_mudline)/z # taking average gradient over initial estimate of embedded depth
@@ -172,6 +175,7 @@ def bearing_capacity_0(su_z, su_mudline, su0, z, z_su0, alpha, B, D, gamma_sub, 
     # Bearing capacity incl. depth and bouyancy effects, Qv (kN/m)
     Qv = Qv0*(1+dca) + gamma_sub*Abm
     return (str_grad_var, delta_su, Qv)
+
 
 def grad_correction(su_z, su_mudline, su0, delta_su, z, B, alpha):
     # Friction and strength gradient correction factor from DNVGL-RP-F114 Figure 4-4, fit to 6th order polynomial in excel
@@ -202,10 +206,12 @@ def grad_correction(su_z, su_mudline, su0, delta_su, z, B, alpha):
     
     return (str_grad_var, F)
 
+
 def bearing_capacity_1(su_z, z, D, gamma_sub, Abm):
     # Bearing capacity incl. depth and bouyancy effects, Qv (kN/m)
     Qv = (min(6*(z/D)**0.25, 3.4*(10*z/D)**0.5)+1.5*gamma_sub*Abm/(D*su_z))*D*su_z
     return Qv
+
 
 def bearing_capacity_10(z, B, D, phi, gamma_sub):
     # Reference level for depth effects, z_0 (m)
@@ -224,6 +230,7 @@ def bearing_capacity_10(z, B, D, phi, gamma_sub):
     # Bearing capacity, Qv (kN/m)
     Qv = 0.5*gamma_sub*Ngamma*B**2 + z_0*gamma_sub*Nq*dq*B
     return Qv
+
 
 def lay_factor(T0, EI, W, z):
     if T0 <= (3*(EI**0.5)*W)**(2/3): # range of applicability for klay equations defined in DVNGL-RP-F114 Section 4.2.5.2
