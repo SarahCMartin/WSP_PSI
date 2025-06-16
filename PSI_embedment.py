@@ -4,7 +4,7 @@ from scipy.optimize import fsolve
 import Common
 
 def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_depths, su_inc, phi):
-    """ This function iterates to find the pipe embedment based on supplied
+    """This function iterates to find the pipe embedment based on supplied
     input variables. It is applicable for as-laid or hydrotest embedment with
     variations to account for these differences switched using PhaseNo."""
 

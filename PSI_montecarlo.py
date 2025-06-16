@@ -1,9 +1,9 @@
 # PSI_montecarlo
 
-# This script runs Pipe-Soil Interaction Calculations for a defined number
-# of randomly generated combinations of parameters with input distributions
-# for each parameter. It is the alternative to PSI_inputs which runs the 
-# PSI for a single parameter set. 
+"""This script runs Pipe-Soil Interaction Calculations for a defined number
+of randomly generated combinations of parameters with input distributions
+for each parameter. It is the alternative to PSI_inputs which runs the 
+PSI for a single parameter set."""
 
 ###########################################################################
 # Housekeeping
@@ -30,10 +30,14 @@ if d['su_profile'] != 1:
 # Read Pipe, Soil and Interface Parameters from Excel input file
 column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Distribution to Fit']
 data_type = [str, float, float, float, str] # corresponding to the headings in 'column headings'
-start_heading = ['Pipe, Soil and Interface Parameters'] # below which the table to read from starts (including column headings)
+start_heading = 'Inputs Requiring Probabalistic Distribution Fitting' # below which the table to read from starts (including column headings)
 
 p = Common.read_columns(input_data, input_data_str, column_headings, data_type, start_heading) # dictionary containing variables which need to be allocated statistically
+p = Common.restructure_col_to_row(p, column_headings)
 
+###########################################################################
+# Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
+random_inputs = Common.generate_rolls(p, d['No_rolls'])
 
 ###########################################################################
 # Pipe Inputs

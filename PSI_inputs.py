@@ -1,7 +1,7 @@
 # PSI_inputs
 
-# This script runs Pipe-Soil Interaction Calculations for a single set of
-# input parameters defined below.
+"""This script runs Pipe-Soil Interaction Calculations for a single set of
+input parameters defined below."""
 
 ###########################################################################
 # Housekeeping
