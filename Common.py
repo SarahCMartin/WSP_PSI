@@ -101,6 +101,7 @@ def restructure_col_to_row(d, column_headings):
 
 def generate_rolls(d, No_rolls):
     rolls = {}
+    import numpy as np
     import Distributions
     from scipy.stats import norm
     from scipy.stats import uniform
@@ -118,37 +119,41 @@ def generate_rolls(d, No_rolls):
 
         if dist == 'uniform':
             loc, scale = Distributions.fit_uniform(LE, BE, HE)
-            rolls[name] = uniform.rvs(loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0, 0.5, 1], uniform, (loc, scale), dist_name='Uniform')
+            # For case where LE=BE=HE, manually making this the value as statistical distribution will otherwise make it vary marginally
+            if np.isclose(LE, BE) and np.isclose(BE, HE):
+                rolls[name] = np.full(No_rolls, BE)
+            else:
+                rolls[name] = uniform.rvs(loc=loc, scale=scale, size=No_rolls)
+            Distributions.plot_distribution_fit([LE, BE, HE], [0, 0.5, 1], uniform, (loc, scale), samples=rolls[name], dist_name='Uniform')
 
         elif dist == 'normal':
             mu, sigma = Distributions.fit_normal_to_percentiles(LE, BE, HE)
             rolls[name] = norm.rvs(loc=mu, scale=sigma, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], norm, (mu, sigma), dist_name='Normal')
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], norm, (mu, sigma), samples=rolls[name], dist_name='Normal')
 
         elif dist == 'log-normal':
             s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE)
             rolls[name] = lognorm.rvs(s=s, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), dist_name='Log-normal')
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], dist_name='Log-normal')
 
         elif dist == 'weibull':
             c, loc, scale = Distributions.fit_weibull_to_percentiles(LE, BE, HE)
             rolls[name] = weibull_min.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_min, (c, loc, scale), dist_name='Weibull')
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_min, (c, loc, scale), samples=rolls[name], dist_name='Weibull')
 
         elif dist == 'reverse-weibull':
             c, loc, scale = Distributions.fit_reverseweibull_to_percentiles(LE, BE, HE)
             rolls[name] = weibull_max.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_max, (c, loc, scale), dist_name='Reverse-weibull')
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_max, (c, loc, scale), samples=rolls[name], dist_name='Reverse-weibull')
 
         elif dist == 'gamma':
             a, loc, scale = Distributions.fit_gamma_to_percentiles(LE, BE, HE)
             rolls[name] = gamma.rvs(a=a, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], gamma, (a, loc, scale), dist_name='Gamma')
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], gamma, (a, loc, scale), samples=rolls[name], dist_name='Gamma')
 
         elif dist == 'rayleigh':
             loc, scale = Distributions.fit_rayleigh_to_percentiles(LE, BE, HE)
             rolls[name] = rayleigh.rvs(loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], rayleigh, (loc, scale), dist_name='Rayleigh')
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], rayleigh, (loc, scale), samples=rolls[name], dist_name='Rayleigh')
 
     return rolls

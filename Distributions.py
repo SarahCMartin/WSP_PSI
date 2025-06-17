@@ -184,15 +184,17 @@ def fit_rayleigh_to_percentiles(LE, BE, HE):
 
     return loc_opt, scale_opt
 
-def plot_distribution_fit(x_percentiles, percentiles, dist, params, dist_name=''):
+def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, dist_name=''):
     """Plots the fitted distribution's CDF and PDF along with input percentiles, inputs:
         x_percentiles (list or np.array): The x-values at given percentiles (e.g., [LE, BE, HE]).
         percentiles (list or np.array): Percentiles corresponding to x_percentiles (e.g., [0.05, 0.5, 0.95]).
         dist (scipy.stats distribution): A scipy.stats distribution object (e.g., scipy.stats.norm).
         params (tuple): Parameters for the distribution (e.g., (mu, sigma)).
+        samples (list): Randomly generated values based on the distribution.
         dist_name (str): Optional name for labeling plots."""
 
     import matplotlib.pyplot as plt
+    from statsmodels.distributions.empirical_distribution import ECDF
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
     x = np.array(x_percentiles)
@@ -208,7 +210,8 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, dist_name=''
         cdf = np.where(x_vals >= x[0], 1.0, 0.0)
         pdf = np.zeros_like(x_vals)
         spike_width = (x_vals[-1] - x_vals[0]) * 0.001  # spike allocated width of 0.1 % of x-range to be large enough to see
-        pdf[(x_vals>=x[0] - spike_width) & (x_vals<=x[0] + spike_width)] = 1.0/(2*spike_width)
+        bin_width = spike_width*20 # making bin wider than spike so it's visible
+        pdf[(x_vals>=x[0] - spike_width) & (x_vals<=x[0] + spike_width)] = 1/bin_width # setting height arbitrarily based on histogram so they match visually; theoretically the spike would be infinite
         pdf[np.abs(x_vals - x[0]) < 1e-6] = 1.0  # visual spike
 
         # Plotting
@@ -216,6 +219,16 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, dist_name=''
         ax[1].plot(x_vals, pdf, 'r-', label=f'{dist_name.title()} PDF')
         ax[0].axvline(x[0], color='blue', linestyle='--', label='LE/BE/HE')
         ax[1].axvline(x[0], color='blue', linestyle='--', label='LE/BE/HE')
+
+        # Adjusting for degenerative case only not to show numbers on the y-axis where they have been arbirtraily adjusted based on arbirary spike/bar widths (theoretically would be infinite)
+        ax[1].tick_params(axis='y', left=False, labelleft=False)
+        ax[1].set_ylabel("Density (arbitrary scale)")
+
+        # Adding histogram of the generated values to visually confirm they correspond to the function
+        if samples is not None and len(samples) > 0:
+            bins=[min(samples)-bin_width/2, max(samples)+bin_width/2]
+            # Setting width and height arbirtarily for visualisation purposes
+            ax[1].hist(samples, bins=bins, alpha=0.5, density=True, color='gray', label='Histogram of Random Values')
 
     else:
         # Compute CDF and PDF
@@ -229,6 +242,13 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, dist_name=''
         ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
         ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
 
+        # Defining PDF axis label here as it is different for the degenerative case vs others
+        ax[1].set_ylabel("Density")
+
+        # Adding histogram of the randomly generated values to visually confirm they correspond to the function
+        if samples is not None and len(samples) > 0:
+            ax[1].hist(samples, bins=50, density=True, alpha=0.5, color='gray', label='Histogram of Random Values')
+
     # Set y-limits for plots
     ax[0].set_ylim(0, 1.05)  # CDF always between 0–1
     ax[1].set_ylim(0, 1.1 * pdf.max() if np.any(pdf > 0) else 1)  # PDF adaptive
@@ -237,17 +257,18 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, dist_name=''
     ax[0].set_title("Cumulative Distribution Function")
     ax[0].set_xlabel("Value")
     ax[0].set_ylabel("Probability")
+    ax[0].set_xlim([x_vals[0], x_vals[-1]])
     ax[0].legend()
 
     ax[1].set_title("Probability Density Function")
     ax[1].set_xlabel("Value")
-    ax[1].set_ylabel("Density")
+    ax[1].set_xlim([x_vals[0], x_vals[-1]])
     ax[1].legend()
 
     plt.tight_layout()
     plt.show()
 
-def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.1):
+def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.05):
     """Returns (x_min, x_max) for plotting. Handles cases where all x are equal."""
     x_min = np.min(x)
     x_max = np.max(x)
