@@ -64,7 +64,7 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
                     z = z_ini
                     break
             elif len(Qv_track) == 2 and Qv_track[0] > W_track[0]: # second iteration; unsufficient weight for embedment using both initial guess and 0.001m, exit calculation but set to 0.001 so it doesn't cause error
-                print("Embedment < 0.001m, please check inputs. z = 0.001m used for subsequent calculations of this dice roll.")
+                #print("Embedment < 0.001m, please check inputs. z = 0.001m used for subsequent calculations of this dice roll.")
                 z = 0.001
                 break
             elif Qv_track[-2] < W_track[-2]: # previous estimate was too much embedment but the one before that was too little, taking mid-point for next iteration
@@ -74,15 +74,15 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
 
         else: # weight exceeds last bearing capacity
             if len(Qv_track) == 1: # first iteration, taking 2D embedment to check if results are within viable range before further iterations
-                z = 2*D
-            elif len(Qv_track) == 2 and Qv_track[0] < W_track[0]: # second iteration; too much weight for embedment using both initial guess and 2D, exit calculation but set to 2D so it doesn't cause error
-                print("Embedment > 2D, please check inputs. z = 2D used for subsequent calculations of this dice roll.")
-                z = 2*D
+                z = 4*D
+            elif len(Qv_track) == 2 and Qv_track[0] < W_track[0]: # second iteration; too much weight for embedment using both initial guess and 4D, exit calculation but set to 4D so it doesn't cause error
+                #print("Embedment > 4D, please check inputs. z = 4D used for subsequent calculations of this dice roll.")
+                z = 4*D
                 break
             elif Qv_track[-2] > W_track[-2]: # previous estimate was too little embedment but the one before that was too much, taking mid-point for next iteration
                 z = (z_track[-1] + z_track[-2])/2
             elif Qv_track[-2] < W_track[-2]: # previous two estimates were too little embedment but somewhere before that was too much, taking mid-point of latest and previous where capacity > weight for next iteration
-                z = (z_track[-1] + z_track[next(x for x in range(len(z_track)-1,-1,-1) if Qv_track[x] > W_track[x])])/2;
+                z = (z_track[-1] + z_track[next(x for x in range(len(z_track)-1,-1,-1) if Qv_track[x] > W_track[x])])/2
         
         ###########################################################################
         # Calculate bearing capacity corresponding to new value of embedment, z (m)
@@ -127,8 +127,8 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
 
     ###########################################################################
     # Results to pass back to master and warning messages to display if required (only those relating to z if statements as others occur as required during their individual function)
-    if Emb_model == 1 and z > D/2: # DNVGL-RP-F114 Section 4.2.3.3 notes undrained model 2 may underpredict embedments where z > D/2
-        print("Undrained embedments z > D/2 may be underpredicted using DNVGL-RP-F114 Model 2/SAFEBUCK, please confirm with a different model.")
+    #if Emb_model == 1 and z > D/2: # DNVGL-RP-F114 Section 4.2.3.3 notes undrained model 2 may underpredict embedments where z > D/2
+        #print("Undrained embedments z > D/2 may be underpredicted using DNVGL-RP-F114 Model 2/SAFEBUCK, please confirm with a different model.")
     
     return z, B
 
@@ -155,8 +155,8 @@ def depth_effects(z, D, B):
 def bearing_capacity_0(su_z, su_mudline, su0, z, z_su0, alpha, B, D, gamma_sub, Abm):
     delta_su = (su_z - su_mudline)/z # taking average gradient over initial estimate of embedded depth
     
-    if delta_su > 4: # DNVGL-RP-F114 model 1 found to give significantly higher embedments for Malampaya validation when using su profile with high gradient but similar results to model 2 when using a lesser gradient, cut-off value for warning is arbitrary and can be adjusted
-        print("High undrained shear strength gradients may give unrealistic results using DNVGL-RP-F114 Model 1, please confirm with a different model.")
+    #if delta_su > 4: # DNVGL-RP-F114 model 1 found to give significantly higher embedments for Malampaya validation when using su profile with high gradient but similar results to model 2 when using a lesser gradient, cut-off value for warning is arbitrary and can be adjusted
+        #print("High undrained shear strength gradients may give unrealistic results using DNVGL-RP-F114 Model 1, please confirm with a different model.")
 
     # Friction and strength gradient correction factor, F (-)
     (str_grad_var, F) = grad_correction(su_z, su_mudline, su0, delta_su, z, B, alpha)
@@ -199,10 +199,10 @@ def grad_correction(su_z, su_mudline, su0, delta_su, z, B, alpha):
     else:
         F = (F_rough-F_smooth)*alpha + F_smooth; # linearly interpolating if selected to be between smooth and rough
     
-    if str_grad_var < F_bounds[0]: # str_grad_var will be final value from iteration corresponding to z_aslaid
-        print("Strength gradient variable appears erroneous (< 0), please check. Assumed delta_su*B/su0 = 0.")
-    elif str_grad_var > F_bounds[1]:
-        print("Strength gradient variable outside of DNVGL-PR-F114 range (> 16), please check. Assumed delta_su*B/su0 = 16.")
+    #if str_grad_var < F_bounds[0]: # str_grad_var will be final value from iteration corresponding to z_aslaid
+        #print("Strength gradient variable appears erroneous (< 0), please check. Assumed delta_su*B/su0 = 0.")
+    #elif str_grad_var > F_bounds[1]:
+        #print("Strength gradient variable outside of DNVGL-PR-F114 range (> 16), please check. Assumed delta_su*B/su0 = 16.")
     
     return (str_grad_var, F)
 
@@ -233,22 +233,57 @@ def bearing_capacity_10(z, B, D, phi, gamma_sub):
 
 
 def lay_factor(T0, EI, W, z):
-    if T0 <= (3*(EI**0.5)*W)**(2/3): # range of applicability for klay equations defined in DVNGL-RP-F114 Section 4.2.5.2
-        print("Pipe inputs outside calibration range for DNVGL-RP-F114 klay equation, please check.")
+    #if T0 <= (3*(EI**0.5)*W)**(2/3): # range of applicability for klay equations defined in DVNGL-RP-F114 Section 4.2.5.2
+        #print("Pipe inputs outside calibration range for DNVGL-RP-F114 klay equation, please check.")
     
-    f = lambda x: x**4 -4*0.6*x**3 + 6*0.6**2*x**2 -(4*0.6**3+(0.4**4)*(EI*W/(z*T0**2)))*x + 0.6**4
-    klay = fsolve(f,[1,3])
+    # f = lambda x: x**4 -4*0.6*x**3 + 6*0.6**2*x**2 -(4*0.6**3+(0.4**4)*(EI*W/(z*T0**2)))*x + 0.6**4
+    # klay = fsolve(f,[1,3])
 
-    klay = [x for x in klay if x >= 1] # minimum value is 1, which represents no lay touchdown impact
-    if klay == []: # no roots >= 1
-        klay = [1]
-    klay = [x for x in klay if x <= 3] # maximum value of 3 taken from DNV-RP-F114 Section 4.2.5.2
-    if klay == []: # no roots <= 3
-        klay = [3]
-    if isinstance(klay, list):
-        if len(klay) > 1:
-            print("Multiple values found for 1 <= klay <= 3, please check. First value has been adopted for subsequent calculations.")
+    # klay = [x for x in klay if x >= 1] # minimum value is 1, which represents no lay touchdown impact
+    # if klay == []: # no roots >= 1
+    #     klay = 1
+    # klay = [x for x in klay if x <= 3] # maximum value of 3 taken from DNV-RP-F114 Section 4.2.5.2
+    # if klay == []: # no roots <= 3
+    #     klay = 3
+    # if isinstance(klay, list):
+    #     if len(klay) > 1:
+    #         #print("Multiple values found for 1 <= klay <= 3, please check. First value has been adopted for subsequent calculations.")
+    #         klay = klay[0]
+    #     else:
+    #         klay = klay[0] # still removing klay from list format to avoid errors
+    # 
+    # return klay
+    
+    # Define polynomial coefficients explicitly to use numpy.roots instead of fsolve for better root finding
+    # Polynomial: x^4 - 4*0.6*x^3 + 6*(0.6^2)*x^2 - [4*(0.6^3) + (0.4^4)*(EI*W/(z*T0^2))]*x + 0.6^4 = 0
+    
+    c4 = 1
+    c3 = -4 * 0.6
+    c2 = 6 * 0.6**2
+    c1 = -(4 * 0.6**3 + (0.4**4) * (EI * W / (z * T0**2)))
+    c0 = 0.6**4
+    
+    coeffs = [c4, c3, c2, c1, c0]
+    
+    # Use numpy.roots to find all roots of the polynomial
+    roots = np.roots(coeffs)
+    
+    # Filter real roots within the range [1, 3]
+    real_roots = [r.real for r in roots if np.isreal(r) and 1 <= r.real <= 3]
+    
+    if not real_roots:
+        # If no roots in [1,3], return boundary values depending on which side roots lie
+        # For robustness, check if any roots are < 1 or > 3
+        min_root = min(r.real for r in roots if np.isreal(r))
+        max_root = max(r.real for r in roots if np.isreal(r))
+        
+        if max_root < 1:
+            return 1
+        elif min_root > 3:
+            return 3
         else:
-            klay = klay[0]
-    return klay
-
+            # Default fallback
+            return 1
+    else:
+        # If multiple valid roots, return the smallest (or choose per your preference)
+        return min(real_roots)

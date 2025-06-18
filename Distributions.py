@@ -1,12 +1,7 @@
 import numpy as np
-from scipy.stats import norm
-from scipy.stats import uniform
-from scipy.stats import lognorm
-from scipy.stats import weibull_min
-from scipy.stats import weibull_max
-from scipy.stats import gamma
-from scipy.stats import rayleigh
-from scipy.optimize import minimize
+from scipy.stats import uniform, norm, lognorm, weibull_min, weibull_max, gamma, rayleigh
+from scipy.optimize import minimize, curve_fit
+
 
 def fit_uniform(LE, BE, HE):
     """Fit a uniform distribution to match the min, mean and max.
@@ -30,6 +25,7 @@ def fit_uniform(LE, BE, HE):
     loc_opt, scale_opt = result.x
     return loc_opt, scale_opt
 
+
 def fit_normal_to_percentiles(LE, BE, HE):
     """Fit a normal distribution to match the 5th, 50th, and 95th percentiles.
     Returns estimated mu and sigma."""
@@ -52,6 +48,7 @@ def fit_normal_to_percentiles(LE, BE, HE):
     mu_opt, sigma_opt = result.x
 
     return mu_opt, sigma_opt
+
 
 def fit_lognormal_to_percentiles(LE, BE, HE):
     """Fit a log-normal distribution to match the 5th, 50th, and 95th percentiles.
@@ -81,6 +78,7 @@ def fit_lognormal_to_percentiles(LE, BE, HE):
 
     return s_opt, loc_opt, scale_opt
 
+
 def fit_weibull_to_percentiles(LE, BE, HE):
     """Fit a weibull distribution to match the 5th, 50th, and 95th percentiles.
     Returns estimated c, loc and scale."""
@@ -104,6 +102,7 @@ def fit_weibull_to_percentiles(LE, BE, HE):
 
     return c_opt, loc_opt, scale_opt
 
+
 def fit_reverseweibull_to_percentiles(LE, BE, HE):
     """Fit a reverse-weibull distribution to match the 5th, 50th, and 95th percentiles.
     Returns estimated c, loc and scale."""
@@ -126,6 +125,7 @@ def fit_reverseweibull_to_percentiles(LE, BE, HE):
     c_opt, loc_opt, scale_opt = result.x
 
     return c_opt, loc_opt, scale_opt
+
 
 def fit_gamma_to_percentiles(LE, BE, HE):
     """Fit a gamma distribution to match the 5th, 50th, and 95th percentiles.
@@ -156,6 +156,7 @@ def fit_gamma_to_percentiles(LE, BE, HE):
 
     return a_opt, loc_opt, scale_opt
 
+
 def fit_rayleigh_to_percentiles(LE, BE, HE):
     """Fit a rayleigh distribution to match the 5th, 50th, and 95th percentiles.
     Returns estimated loc and scale."""
@@ -184,6 +185,55 @@ def fit_rayleigh_to_percentiles(LE, BE, HE):
 
     return loc_opt, scale_opt
 
+
+def fit_distribution_cdf(data, dist_name):
+    # Sort data and compute empirical CDF values
+    sorted_data = np.sort(data)
+    ecdf = np.arange(1, len(data) + 1) / len(data)
+
+    # Define CDF models for supported distributions
+    def uniform_cdf(x, loc, scale):
+        return uniform.cdf(x, loc=loc, scale=scale)
+    
+    def normal_cdf(x, mu, sigma):
+        return norm.cdf(x, loc=mu, scale=sigma)
+    
+    def lognormal_cdf(x, s, loc, scale):
+        return lognorm.cdf(x, s=s, loc=loc, scale=scale)
+    
+    def weibull_cdf(x, c, loc, scale):
+        return weibull_min.cdf(x, c=c, loc=loc, scale=scale)
+    
+    def reverseweibull_cdf(x, c, loc, scale):
+        return weibull_max.cdf(x, c=c, loc=loc, scale=scale)
+    
+    def gamma_cdf(x, a, loc, scale):
+        return gamma.cdf(x, a=a, loc=loc, scale=scale)
+    
+    def rayleigh_cdf(x, loc, scale):
+        return rayleigh.cdf(x, loc=loc, scale=scale)
+     
+    # Map distribution names to model functions and initial parameter guesses
+    models = {
+        'Uniform': (uniform_cdf, [np.min(data), np.max(data)-np.min(data)]),                        # loc, scale
+        'Normal': (normal_cdf, [np.mean(data), np.std(data)]),                                      # mu, sigma
+        'Log-normal': (lognormal_cdf, [np.std(np.log(data)), 0, np.exp(np.mean(np.log(data)))]),    # s, loc, scale
+        'Weibull': (weibull_cdf, [1.5, 0, np.mean(data)]),                                          # c, loc, scale
+        'Reverse-weibull': (reverseweibull_cdf, [1.5, 0, np.mean(data)]),                           # c, loc, scale
+        'Gamma': (gamma_cdf, [(np.mean(data)/np.std(data))**2, 0, np.var(data)/np.mean(data)]),     # a, loc, scale
+        'Rayleigh': (rayleigh_cdf, [0, np.sqrt((2/np.pi))*np.mean(data)]),                          # loc, scale
+    }
+    if dist_name not in models:
+        raise ValueError(f"Unsupported distribution: {dist_name}")
+    
+    cdf_func, p0 = models[dist_name]
+
+    # Fit the CDF model to empirical data using curve_fit
+    params_opt, params_cov = curve_fit(cdf_func, sorted_data, ecdf, p0=p0, maxfev=10000)
+
+    return params_opt
+
+
 def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, dist_name=''):
     """Plots the fitted distribution's CDF and PDF along with input percentiles, inputs:
         x_percentiles (list or np.array): The x-values at given percentiles (e.g., [LE, BE, HE]).
@@ -197,13 +247,21 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     from statsmodels.distributions.empirical_distribution import ECDF
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-    x = np.array(x_percentiles)
-    probs = np.array(percentiles)
+    # x = np.array(x_percentiles)
+    # probs = np.array(percentiles)
 
     # Create x-range for plotting
-    x_min, x_max = get_plot_bounds(x)
+    if x_percentiles is not None: # plotting distribution for inputs
+        x = np.array(x_percentiles)
+        probs = np.array(percentiles)
+        x_min, x_max = get_plot_bounds(x)
+    else: # plotting distribution for outputs
+        x = None
+        probs = None
+        x_min, x_max = get_plot_bounds(samples)
+
     x_vals = np.linspace(x_min, x_max, 1000)
-    
+
     # Check for degenerate case (all percentiles equal)
     if dist == uniform and np.allclose(x, x[0]):
         # Compute CDF and PDF
@@ -239,15 +297,18 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
         # Plotting
         ax[0].plot(x_vals, cdf, 'r-', label=f'{dist_name.title()} CDF')
         ax[1].plot(x_vals, pdf, 'r-', label=f'{dist_name.title()} PDF')
-        ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
-        ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
+        
+        # Adding input percentiles for input fitting, not relevant for results fitting
+        if x is not None and len(x) > 0:
+            ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
+            ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
 
         # Defining PDF axis label here as it is different for the degenerative case vs others
         ax[1].set_ylabel("Density")
 
-        # Adding histogram of the randomly generated values to visually confirm they correspond to the function
+        # Adding histogram of the randomly generated inputs / calculated results from those inputs to visually confirm they correspond to the function
         if samples is not None and len(samples) > 0:
-            ax[1].hist(samples, bins=50, density=True, alpha=0.5, color='gray', label='Histogram of Random Values')
+            ax[1].hist(samples, bins=50, density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
 
     # Set y-limits for plots
     ax[0].set_ylim(0, 1.05)  # CDF always between 0–1
@@ -280,3 +341,23 @@ def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.05):
         plot_min = x_min-pad
         plot_max = x_max+pad
         return plot_min, plot_max
+    
+
+def dist_map(dist_name):
+    # Map distribution names to scipy.stats objects
+    dist_map = {
+        "Uniform": uniform,
+        "Normal": norm,
+        "Log-normal": lognorm,
+        "Weibull": weibull_min,
+        "Reverse-weibull": weibull_max,
+        "Gamma": gamma,
+        "Rayleigh": rayleigh
+    }
+    # Get the distribution object
+    dist_obj = dist_map.get(dist_name)
+
+    if dist_obj is None:
+        raise ValueError(f"Unsupported distribution: {dist_str}")
+    else:
+        return dist_obj

@@ -17,14 +17,21 @@ d = {} # empty dictionary to take input parameters to add to PSI_case object in 
 import Common
 (input_data, input_data_str) = Common.import_excel()
 
+import time
+start = time.time() # Start timing after selection of the excel file to accurately reflect the monte carlo time which could be optimised
+
 ###########################################################################
 # Read Monte Carlo and Model Selection Parameters from Excel input file
-var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_model', 'Lat_brk_suction', 'Lat_res_model', 'Lat_res_suction', 'Emb_res_model', 'Ax_model', 'Lat_cyc_model', 'No_cycles', 'su_profile', 'z_su_inv', 'Output_dist']
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_model', 'Lat_brk_suction', 'Lat_res_model', 'Lat_res_suction', 'Emb_res_model', 'Ax_model', 'Lat_cyc_model', 'su_profile', 'z_su_inv', 'Output_dist']
 d = {name: Common.find_var_value(input_data, input_data_str, name) for name in var_names} # dictionary containing constant parameters
 
 # Handle special logic for z_su_inv
 if d['su_profile'] != 1:
     d['z_su_inv'] = []
+
+# Adding separately model inputs which can be in the form of a list, currently only No_cycles
+list_names = ['No_cycles']
+d.update({name: Common.find_var_list(input_data, input_data_str, name) for name in list_names})
 
 ###########################################################################
 # Read Pipe, Soil and Interface Parameters from Excel input file
@@ -38,52 +45,73 @@ p = Common.restructure_col_to_row(p, column_headings)
 ###########################################################################
 # Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
 random_inputs = Common.generate_rolls(p, d['No_rolls'])
+import numpy as np
+random_inputs['z_ini'] = [float(x / 2) for x in random_inputs['D']]
 
 ###########################################################################
-# Pipe Inputs
-d['D'] = 0.3299             # pipe diameter in (m)
-d['W_empty'] = 0.8975       # submerged weight of empty pipe per unit length (kN/m)
-d['W_hydro'] = 1.5022       # submerged weight of flooded pipe during hydrotest per unit length (kN/m)
-d['W_op'] = 1.0745          # submerged weight of operating pipe per unit length (kN/m) (CAMAGO: max 1.0745, mid 1.0155, min 0.9565)
-d['alpha'] = 0.5            # pipe-soil interface adhesion coefficient, fully smooth = 0 and fully rough = 1 (CAMAGO: estimated such that axial residual LE corresponds ok with interface shear data)
-d['EI'] = 61675             # pipe bending stiffness (kNm2) from E = 210GPa for steel and I for pipe annulus dimensions
-d['T0'] = 44                # bottom lay tension (kN) (CAMAGO: Crondall use 27 to 236 kN; possible update to 44 to 257 kN from SEA)
-d['z_ini'] = d['D']         # initial guess of pipe embedment as starting point for iteration (m)
-d['t_aslaid'] = 1/12        # time between pipe lay and hydrotest (years)
-d['t_hydro'] = 1/24         # time to complete hydrotest plus time pipe is left flooded between hydrotest and operation (years)
-d['t_preop'] = 1/12         # time pipe is left empty between hydrotest and operation (years)
-
-###########################################################################
-# Soil Inputs
-d['su_profile'] = 1         # soil-soil: only considering the top 1m, linear profile = 0, bi-linear profile = 1
-d['su_mudline'] = 0.35         # soil-soil: undrained shear strength at mudline (kPa) (CAMAGO: LE 0, BE 0.35, HE 3.57, OC HE 64.29)
-d['su_inv'] = 4.84          # soil-soil: undrained shear strength at inversion point for a bi-linear profile, z_su_inv (kPa) (CAMAGO: LE 1.33, BE 4.84, HE 14.29, OC HE 75)
-d['z_su_inv'] = 0.5         # soil-soil: depth for inversion point for a bi-linear undrained shear strength profile (m) 
-d['delta_su'] = 3.00        # soil-soil: increase in undrained shear strength with depth (kPa/m), below inversion for a bi-linear profile (CAMAGO: LE 1.33, BE 3.00, HE 7.72, OC HE 7.14)
-d['gamma_sub'] = 4.20       # submerged unit weight of soil (kN/m3) (CAMAGO: avg over top 1m LE 3.04, BE 4.20, HE 6.96, OC HE 7.74)
-d['pipelay_St'] = 7         # soil-soil: sensitivity factor for pipe lay, adjusted as part of calibration with other pipes in the area so may not correspond to standard soil sensitivity (CAMAGO: not changed from calibration to nearby pipelines at this stage)
-d['lateral_St'] = 4.33      # soil-soil: sensitivity factor for lateral breakout relating to the soil in the active and passive failure zones on either side of the embedded pipe (CAMAGO: avg over top 1m LE 1.5, BE 4.33, HE 8.33)
-d['cv'] = 23                 # soil-soil: coefficient of consolidation (m2/year) (CAMAGO: avg over top 1m LE 1, BE 23, HE 357, OC HE 1281)
-d['SHANSEP_S'] = 0.285       # soil-soil: normalised shear strength for NC condition, found from best fit between CPTs and oedometer tests with SHANSEP approach (CAMAGO: LE 0.22, BE 0.285, HE 0.35)
-d['SHANSEP_m'] = 0.825        # soil-soil: SHANSEP exponent, found from best fit between CPT and oedometer tests (CAMAGO: LE 0.8, BE 0.825, HE 0.85)
-d['ka'] = 2.25              # soil-soil: pressure resistance coefficients (note not earth pressure coefficient Ka), 2 <= ka <= 2.5 from DNVGL-RP-F114 Section 4.4.2.2
-d['kp'] = 2.25              # soil-soil: pressure resistance coefficients (note not earth pressure coefficient Kp), 2 <= kp <= 2.5 from DNVGL-RP-F114 Section 4.4.2.2
-d['phi'] = 30               # soil-soil: friction angle (deg) (CAMAGO: using LE 24, BE 30, HE 42)
-
-###########################################################################
-# Interface Inputs
-d['int_SHANSEP_S'] = 0.36   # soil-pipe interface: normalised shear strength for NC condition (CAMAGO: 0.36 for all)
-d['int_SHANSEP_m'] = 0.4    # soil-pipe interface: SHANSEP exponent (CAMAGO: 0.4 for all)
-d['delta'] = 34.6           # soil-pipe interface: friction angle (deg) (CAMAGO: using LE 26.6, BE 34.6, HE 41.3 from atan of values from interface friction tests)
-
-###########################################################################
-# Run PSI
-# [z_aslaid, z_hydro, z_res, ff_lat_brk, y_lat_brk, ff_lat_res, y_lat_res, ff_ax, x_ax, ff_lat_cyc, ff_lat_berm, z_cyc] = 
+# Run PSI for prescribed number of parameter sets (rolls)
 from PSI_class import PSI
-PSI_case = PSI(d)
-
 import PSI_soils
-PSI_case = PSI_case.PSI_master()
+results = []
 
+for i in range(d['No_rolls']):
+    # Compile model parameters (fixed variables) with a set of pipe, soil and interface parameters for that roll (random probabilistic variables)
+    current_random = {k: v[i] for k, v in random_inputs.items()}
+    input_dict = {**d, **current_random}
 
+    # Run model for a given roll with the corresponding set of 1 of each parameters
+    PSI_case = PSI(input_dict)
+    PSI_case = PSI_case.PSI_master()
 
+    # Compiling results dictionaries - 1 for inputs and 1 for outputs for every roll (inputs taken directly in case they are edited at all throughout the running process)
+    input_keys = set(input_dict.keys())
+    output_dict = {
+        attr: getattr(PSI_case, attr)  
+        for attr in dir(PSI_case) 
+        if not attr.startswith("_") 
+        and not callable(getattr(PSI_case, attr)) 
+        and attr not in input_keys
+        }
+    results.append({"inputs": input_dict, "outputs": output_dict})
+
+# Converting to lists of each variable to be easier to plot outputs
+list_inputs = {}
+list_results = {}
+
+for entry in results:
+    for k, v in entry['inputs'].items():
+        list_inputs.setdefault(k, []).append(v)
+    for k, v in entry['outputs'].items():
+        list_results.setdefault(k, []).append(v)
+
+suffix_map = {
+    2: ["LE", "HE"],
+    3: ["LE", "BE", "HE"],
+}
+
+for key, value in list(list_results.items()):
+    if (
+        isinstance(value, list)
+        and all(isinstance(i, list) for i in value)
+        and len(value) > 0
+        and all(len(i) == len(value[0]) for i in value) # consistent inner length
+        and len(value[0]) in suffix_map                 # only process 2 or 3 values because these are known to be LE-HE or LE-BE-HE, any other length >1 would be erroneous
+    ):
+        # Transpose the list of lists
+        transposed = list(map(list, zip(*value)))
+
+        # Assign each column to a new key with a suffix
+        for i, suffix in enumerate(suffix_map[len(value[0])]):
+            list_results[f"{key}_{suffix}"] = transposed[i]
+
+        # Remove the original unsplit key
+        del list_results[key]
+
+end = time.time()
+#print(list_results['z_aslaid'])
+print(f"Elapsed time: {end - start:.4f} seconds")
+
+###########################################################################
+# Plotting results and fitting distributions to them
+to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk', 'ff_lat_res', 'ff_ax']
+Common.process_results(list_results, d['Output_dist'], to_fit_and_plot)

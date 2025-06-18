@@ -66,9 +66,9 @@ d['delta'] = 34.6           # soil-pipe interface: friction angle (deg) (CAMAGO:
 
 ###########################################################################
 # Run PSI
-# [z_aslaid, z_hydro, z_res, ff_lat_brk, y_lat_brk, ff_lat_res, y_lat_res, ff_ax, x_ax, ff_lat_cyc, ff_lat_berm, z_cyc] = 
 from PSI_class import PSI
 PSI_case = PSI(d)
 
 import PSI_soils
 PSI_case = PSI_case.PSI_master()
+print(PSI_case)

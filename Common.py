@@ -30,6 +30,10 @@ def linear_extrapolate(x_new, x_known, y_known):
 def import_excel():
     import pandas as pd
     from tkinter import Tk, filedialog
+    import warnings
+
+    # Supressing a warning that happens everytime because the Excel sheet has drop downs for the distribution types
+    warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
 
     # Opening then hiding the GUI window to be able to do the file-picking in a window next
     root = Tk()
@@ -54,6 +58,20 @@ def find_var_value(input_data, input_data_str, var_name):
     except IndexError:
         raise ValueError(f"Variable '{var_name}' not found in column A")
     
+def find_var_list(input_data, input_data_str, list_name):
+    import pandas as pd
+    try:
+        row_index = input_data_str[input_data_str[0] == list_name].index[0]
+        row = input_data.loc[row_index, 1:]
+        values = []
+        for val in row:
+            if pd.isna(val) or str(val).strip() == "":
+                break
+            values.append(val)
+        return values
+    
+    except IndexError:
+        raise ValueError(f"Variable '{list_name}' not found in column A")
 
 def read_columns(input_data, input_data_str, col_headings, data_type, start_heading):
     d = {} # Initialising empty dictionary
@@ -103,13 +121,7 @@ def generate_rolls(d, No_rolls):
     rolls = {}
     import numpy as np
     import Distributions
-    from scipy.stats import norm
-    from scipy.stats import uniform
-    from scipy.stats import lognorm
-    from scipy.stats import weibull_min
-    from scipy.stats import weibull_max
-    from scipy.stats import gamma
-    from scipy.stats import rayleigh
+    from scipy.stats import uniform, norm, lognorm, weibull_min, weibull_max, gamma, rayleigh
 
     for name, info in d.items():
         LE = info["LE"]
@@ -124,36 +136,57 @@ def generate_rolls(d, No_rolls):
                 rolls[name] = np.full(No_rolls, BE)
             else:
                 rolls[name] = uniform.rvs(loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0, 0.5, 1], uniform, (loc, scale), samples=rolls[name], dist_name='Uniform')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0, 0.5, 1], uniform, (loc, scale), samples=rolls[name], dist_name='Uniform')
 
         elif dist == 'normal':
             mu, sigma = Distributions.fit_normal_to_percentiles(LE, BE, HE)
             rolls[name] = norm.rvs(loc=mu, scale=sigma, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], norm, (mu, sigma), samples=rolls[name], dist_name='Normal')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], norm, (mu, sigma), samples=rolls[name], dist_name='Normal')
 
         elif dist == 'log-normal':
             s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE)
             rolls[name] = lognorm.rvs(s=s, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], dist_name='Log-normal')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], dist_name='Log-normal')
 
         elif dist == 'weibull':
             c, loc, scale = Distributions.fit_weibull_to_percentiles(LE, BE, HE)
             rolls[name] = weibull_min.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_min, (c, loc, scale), samples=rolls[name], dist_name='Weibull')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_min, (c, loc, scale), samples=rolls[name], dist_name='Weibull')
 
         elif dist == 'reverse-weibull':
             c, loc, scale = Distributions.fit_reverseweibull_to_percentiles(LE, BE, HE)
             rolls[name] = weibull_max.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_max, (c, loc, scale), samples=rolls[name], dist_name='Reverse-weibull')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_max, (c, loc, scale), samples=rolls[name], dist_name='Reverse-weibull')
 
         elif dist == 'gamma':
             a, loc, scale = Distributions.fit_gamma_to_percentiles(LE, BE, HE)
             rolls[name] = gamma.rvs(a=a, loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], gamma, (a, loc, scale), samples=rolls[name], dist_name='Gamma')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], gamma, (a, loc, scale), samples=rolls[name], dist_name='Gamma')
 
         elif dist == 'rayleigh':
             loc, scale = Distributions.fit_rayleigh_to_percentiles(LE, BE, HE)
             rolls[name] = rayleigh.rvs(loc=loc, scale=scale, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], rayleigh, (loc, scale), samples=rolls[name], dist_name='Rayleigh')
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], rayleigh, (loc, scale), samples=rolls[name], dist_name='Rayleigh')
 
     return rolls
+
+
+def process_results(results, dist_str, chosen):
+    import numpy as np
+    import Distributions
+    from scipy.stats import uniform, norm, lognorm, weibull_min, weibull_max, gamma, rayleigh
+
+    dist = Distributions.dist_map(dist_str)
+    output_fit_params = {}
+    percentiles = [0.05, 0.5, 0.95]
+
+    for name, info in results.items():
+        if name in chosen:
+            output_fit_params[name] = Distributions.fit_distribution_cdf(info, dist_str)
+            x_percentiles = dist.ppf(percentiles, *output_fit_params[name])
+            if np.isnan(x_percentiles).any():
+                print(f"No or insufficient information to fit distribtuion for {name}")
+            else:
+                Distributions.plot_distribution_fit(x_percentiles, percentiles, dist, output_fit_params[name], info, dist_str)
+
+
