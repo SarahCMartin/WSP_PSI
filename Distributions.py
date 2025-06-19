@@ -186,57 +186,9 @@ def fit_rayleigh_to_percentiles(LE, BE, HE):
     return loc_opt, scale_opt
 
 
-# def fit_distribution_cdf(data, dist_name):
-#     # Sort data and compute empirical CDF values
-#     sorted_data = np.sort(data)
-#     ecdf = np.arange(1, len(data) + 1) / len(data)
-
-#     # Define CDF models for supported distributions
-#     def uniform_cdf(x, loc, scale):
-#         return uniform.cdf(x, loc=loc, scale=scale)
-    
-#     def normal_cdf(x, mu, sigma):
-#         return norm.cdf(x, loc=mu, scale=sigma)
-    
-#     def lognormal_cdf(x, s, loc, scale):
-#         return lognorm.cdf(x, s=s, loc=loc, scale=scale)
-    
-#     def weibull_cdf(x, c, loc, scale):
-#         return weibull_min.cdf(x, c=c, loc=loc, scale=scale)
-    
-#     def reverseweibull_cdf(x, c, loc, scale):
-#         return weibull_max.cdf(x, c=c, loc=loc, scale=scale)
-    
-#     def gamma_cdf(x, a, loc, scale):
-#         return gamma.cdf(x, a=a, loc=loc, scale=scale)
-    
-#     def rayleigh_cdf(x, loc, scale):
-#         return rayleigh.cdf(x, loc=loc, scale=scale)
-     
-#     # Map distribution names to model functions and initial parameter guesses
-#     models = {
-#         'Uniform': (uniform_cdf, [np.min(data), np.max(data)-np.min(data)]),                        # loc, scale
-#         'Normal': (normal_cdf, [np.mean(data), np.std(data)]),                                      # mu, sigma
-#         'Log-normal': (lognormal_cdf, [np.std(np.log(data)), 0, np.exp(np.mean(np.log(data)))]),    # s, loc, scale
-#         'Weibull': (weibull_cdf, [1.5, 0, np.mean(data)]),                                          # c, loc, scale
-#         'Reverse-weibull': (reverseweibull_cdf, [1.5, 0, np.mean(data)]),                           # c, loc, scale
-#         'Gamma': (gamma_cdf, [(np.mean(data)/np.std(data))**2, 0, np.var(data)/np.mean(data)]),     # a, loc, scale
-#         'Rayleigh': (rayleigh_cdf, [0, np.sqrt((2/np.pi))*np.mean(data)]),                          # loc, scale
-#     }
-#     if dist_name not in models:
-#         raise ValueError(f"Unsupported distribution: {dist_name}")
-    
-#     cdf_func, p0 = models[dist_name]
-
-#     # Fit the CDF model to empirical data using curve_fit
-#     params_opt, params_cov = curve_fit(cdf_func, sorted_data, ecdf, p0=p0, maxfev=10000)
-
-#     return params_opt
-
-
 def fit_distribution_cdf(data, dist_name):
     """Fit a distribution CDF to empirical data by minimizing squared error of CDF values.
-    Enforces positive shape/scale and loc >= 0. This is the difference from fit_distribution_cdf."""
+    Enforces positive shape/scale and loc >= 0. Returns optimised parameters."""
 
     # Get distribution object and parameter names
     dist, param_names = dist_map(dist_name, return_params=True)
@@ -373,12 +325,12 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     ax[0].set_title("Cumulative Distribution Function")
     #ax[0].set_xlabel("Value")
     ax[0].set_ylabel("Probability")
-    ax[0].set_xlim([x_vals[0], x_vals[-1]])
+    ax[0].set_xlim([max(0,x_vals[0]), x_vals[-1]])
     ax[0].legend()
 
     ax[1].set_title("Probability Density Function")
     #ax[1].set_xlabel("Value")
-    ax[1].set_xlim([x_vals[0], x_vals[-1]])
+    ax[1].set_xlim([max(0,x_vals[0]), x_vals[-1]])
     ax[1].legend()
     
     PSI_resultformat.hard_coded_headings(fig, ax, param_name)
