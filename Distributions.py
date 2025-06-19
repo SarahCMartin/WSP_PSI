@@ -186,55 +186,109 @@ def fit_rayleigh_to_percentiles(LE, BE, HE):
     return loc_opt, scale_opt
 
 
+# def fit_distribution_cdf(data, dist_name):
+#     # Sort data and compute empirical CDF values
+#     sorted_data = np.sort(data)
+#     ecdf = np.arange(1, len(data) + 1) / len(data)
+
+#     # Define CDF models for supported distributions
+#     def uniform_cdf(x, loc, scale):
+#         return uniform.cdf(x, loc=loc, scale=scale)
+    
+#     def normal_cdf(x, mu, sigma):
+#         return norm.cdf(x, loc=mu, scale=sigma)
+    
+#     def lognormal_cdf(x, s, loc, scale):
+#         return lognorm.cdf(x, s=s, loc=loc, scale=scale)
+    
+#     def weibull_cdf(x, c, loc, scale):
+#         return weibull_min.cdf(x, c=c, loc=loc, scale=scale)
+    
+#     def reverseweibull_cdf(x, c, loc, scale):
+#         return weibull_max.cdf(x, c=c, loc=loc, scale=scale)
+    
+#     def gamma_cdf(x, a, loc, scale):
+#         return gamma.cdf(x, a=a, loc=loc, scale=scale)
+    
+#     def rayleigh_cdf(x, loc, scale):
+#         return rayleigh.cdf(x, loc=loc, scale=scale)
+     
+#     # Map distribution names to model functions and initial parameter guesses
+#     models = {
+#         'Uniform': (uniform_cdf, [np.min(data), np.max(data)-np.min(data)]),                        # loc, scale
+#         'Normal': (normal_cdf, [np.mean(data), np.std(data)]),                                      # mu, sigma
+#         'Log-normal': (lognormal_cdf, [np.std(np.log(data)), 0, np.exp(np.mean(np.log(data)))]),    # s, loc, scale
+#         'Weibull': (weibull_cdf, [1.5, 0, np.mean(data)]),                                          # c, loc, scale
+#         'Reverse-weibull': (reverseweibull_cdf, [1.5, 0, np.mean(data)]),                           # c, loc, scale
+#         'Gamma': (gamma_cdf, [(np.mean(data)/np.std(data))**2, 0, np.var(data)/np.mean(data)]),     # a, loc, scale
+#         'Rayleigh': (rayleigh_cdf, [0, np.sqrt((2/np.pi))*np.mean(data)]),                          # loc, scale
+#     }
+#     if dist_name not in models:
+#         raise ValueError(f"Unsupported distribution: {dist_name}")
+    
+#     cdf_func, p0 = models[dist_name]
+
+#     # Fit the CDF model to empirical data using curve_fit
+#     params_opt, params_cov = curve_fit(cdf_func, sorted_data, ecdf, p0=p0, maxfev=10000)
+
+#     return params_opt
+
+
 def fit_distribution_cdf(data, dist_name):
+    """Fit a distribution CDF to empirical data by minimizing squared error of CDF values.
+    Enforces positive shape/scale and loc >= 0. This is the difference from fit_distribution_cdf."""
+
+    # Get distribution object and parameter names
+    dist, param_names = dist_map(dist_name, return_params=True)
+
     # Sort data and compute empirical CDF values
     sorted_data = np.sort(data)
     ecdf = np.arange(1, len(data) + 1) / len(data)
 
-    # Define CDF models for supported distributions
-    def uniform_cdf(x, loc, scale):
-        return uniform.cdf(x, loc=loc, scale=scale)
-    
-    def normal_cdf(x, mu, sigma):
-        return norm.cdf(x, loc=mu, scale=sigma)
-    
-    def lognormal_cdf(x, s, loc, scale):
-        return lognorm.cdf(x, s=s, loc=loc, scale=scale)
-    
-    def weibull_cdf(x, c, loc, scale):
-        return weibull_min.cdf(x, c=c, loc=loc, scale=scale)
-    
-    def reverseweibull_cdf(x, c, loc, scale):
-        return weibull_max.cdf(x, c=c, loc=loc, scale=scale)
-    
-    def gamma_cdf(x, a, loc, scale):
-        return gamma.cdf(x, a=a, loc=loc, scale=scale)
-    
-    def rayleigh_cdf(x, loc, scale):
-        return rayleigh.cdf(x, loc=loc, scale=scale)
-     
-    # Map distribution names to model functions and initial parameter guesses
-    models = {
-        'Uniform': (uniform_cdf, [np.min(data), np.max(data)-np.min(data)]),                        # loc, scale
-        'Normal': (normal_cdf, [np.mean(data), np.std(data)]),                                      # mu, sigma
-        'Log-normal': (lognormal_cdf, [np.std(np.log(data)), 0, np.exp(np.mean(np.log(data)))]),    # s, loc, scale
-        'Weibull': (weibull_cdf, [1.5, 0, np.mean(data)]),                                          # c, loc, scale
-        'Reverse-weibull': (reverseweibull_cdf, [1.5, 0, np.mean(data)]),                           # c, loc, scale
-        'Gamma': (gamma_cdf, [(np.mean(data)/np.std(data))**2, 0, np.var(data)/np.mean(data)]),     # a, loc, scale
-        'Rayleigh': (rayleigh_cdf, [0, np.sqrt((2/np.pi))*np.mean(data)]),                          # loc, scale
-    }
-    if dist_name not in models:
-        raise ValueError(f"Unsupported distribution: {dist_name}")
-    
-    cdf_func, p0 = models[dist_name]
+    # For positive-support dists, filter data <= 0
+    positive_support = ['Log-normal', 'Weibull', 'Reverse-weibull', 'Gamma', 'Rayleigh']
+    if dist_name in positive_support:
+        mask = sorted_data > 0
+        sorted_data = sorted_data[mask]
+        ecdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
 
-    # Fit the CDF model to empirical data using curve_fit
-    params_opt, params_cov = curve_fit(cdf_func, sorted_data, ecdf, p0=p0, maxfev=10000)
+    # Get initial guess using scipy.stats fit (with loc fixed to 0 if positive support)
+    try:
+        if 'loc' in param_names and dist_name in positive_support:
+            init_params = dist.fit(sorted_data, floc=0)
+        else:
+            init_params = dist.fit(sorted_data)
+    except Exception:
+        # fallback initial guess if fit fails
+        init_params = np.ones(len(param_names))
 
-    return params_opt
+    # Define bounds: loc >=0; shape/scale >0; others unbounded
+    bounds = []
+    for param in param_names:
+        if param == 'loc':
+            bounds.append((0, None))  # loc ≥ 0
+        elif param in ['scale', 's', 'c', 'a']:
+            bounds.append((1e-6, None))  # shape/scale > 0
+        else:
+            bounds.append((None, None))  # no bounds
+
+    # Objective function: sum squared error between empirical CDF and model CDF
+    def objective(params):
+        try:
+            cdf_vals = dist.cdf(sorted_data, *params)
+            return np.sum((cdf_vals - ecdf) ** 2)
+        except Exception:
+            return 1e10  # penalty for invalid params
+
+    result = minimize(objective, init_params, bounds=bounds, method='L-BFGS-B')
+
+    if not result.success:
+        raise RuntimeError(f"Optimization failed: {result.message}")
+
+    return result.x
 
 
-def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, dist_name=''):
+def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name=''):
     """Plots the fitted distribution's CDF and PDF along with input percentiles, inputs:
         x_percentiles (list or np.array): The x-values at given percentiles (e.g., [LE, BE, HE]).
         percentiles (list or np.array): Percentiles corresponding to x_percentiles (e.g., [0.05, 0.5, 0.95]).
@@ -245,6 +299,7 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
 
     import matplotlib.pyplot as plt
     from statsmodels.distributions.empirical_distribution import ECDF
+    import PSI_resultformat
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
     # x = np.array(x_percentiles)
@@ -316,17 +371,19 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
 
     # Setting other aesthetic details for plots
     ax[0].set_title("Cumulative Distribution Function")
-    ax[0].set_xlabel("Value")
+    #ax[0].set_xlabel("Value")
     ax[0].set_ylabel("Probability")
     ax[0].set_xlim([x_vals[0], x_vals[-1]])
     ax[0].legend()
 
     ax[1].set_title("Probability Density Function")
-    ax[1].set_xlabel("Value")
+    #ax[1].set_xlabel("Value")
     ax[1].set_xlim([x_vals[0], x_vals[-1]])
     ax[1].legend()
+    
+    PSI_resultformat.hard_coded_headings(fig, ax, param_name)
 
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.show()
 
 def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.05):
@@ -343,21 +400,22 @@ def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.05):
         return plot_min, plot_max
     
 
-def dist_map(dist_name):
-    # Map distribution names to scipy.stats objects
+def dist_map(dist_name, return_params=False):
+    # Map distribution names and parameters to scipy.stats objects
     dist_map = {
-        "Uniform": uniform,
-        "Normal": norm,
-        "Log-normal": lognorm,
-        "Weibull": weibull_min,
-        "Reverse-weibull": weibull_max,
-        "Gamma": gamma,
-        "Rayleigh": rayleigh
+        "Uniform": (uniform, ['loc', 'scale']),
+        "Normal": (norm, ['loc', 'scale']),
+        "Log-normal": (lognorm, ['s', 'loc', 'scale']),
+        "Weibull": (weibull_min, ['c', 'loc', 'scale']),
+        "Reverse-weibull": (weibull_max, ['c', 'loc', 'scale']),
+        "Gamma": (gamma, ['a', 'loc', 'scale']),
+        "Rayleigh": (rayleigh, ['loc', 'scale'])
     }
-    # Get the distribution object
-    dist_obj = dist_map.get(dist_name)
+    entry = dist_map.get(dist_name)
 
-    if dist_obj is None:
-        raise ValueError(f"Unsupported distribution: {dist_str}")
+    if entry is None:
+        raise ValueError(f"Unsupported distribution: {dist_name}")
+    if return_params:
+        return entry # returns dist_obj and param_names
     else:
-        return dist_obj
+        return entry[0] # returns dist_obj only
