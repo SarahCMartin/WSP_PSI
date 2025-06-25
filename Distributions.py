@@ -257,7 +257,47 @@ def fit_rayleigh_to_percentiles(LE, BE, HE, Min):
     return loc_opt, scale_opt
 
 
-def fit_distribution_cdf(data, dist_name):
+def fit_best_distribution_cdf(data):
+    """Fit each distribution CDF to empirical data by minimizing squared error of CDF values then select the best fit.
+    Enforces positive shape/scale and loc >= 0. Returns optimised parameters."""
+
+    # All distributions available excluding uniform as inputs where this is the appropriate choice should be known and defined as such manually
+    candidates = ['Normal', 'Log-normal', 'Weibull', 'Gamma', 'Rayleigh']
+
+    best_dist = None
+    best_params = None
+    best_score = np.inf
+
+    for name in candidates:
+        try:
+            params, error = fit_distribution_cdf(data, name, return_error=True)
+
+            # Penalty for suspicious shape parameters (which can lead to unrealistic distrributions getting low error and being selected)
+            shape_penalty = 0.0
+            dist_obj, dist_param_names = dist_map(name, return_params=True)
+
+            for p_name, p_val in zip(dist_param_names, params):
+                if p_name in ['a', 's', 'c']:  # shape parameters
+                    if p_val < 0.2 or p_val > 10:
+                        shape_penalty += 10.0
+
+            total_score = error + shape_penalty
+
+            if total_score < best_score:
+                best_score = total_score
+                best_dist = name
+                best_params = params
+
+        except Exception as e:
+            continue
+
+    if best_dist is None:
+        raise RuntimeError("No distribution could be successfully fit.")
+
+    return best_dist, best_params
+
+
+def fit_distribution_cdf(data, dist_name, return_error=False):
     """Fit a distribution CDF to empirical data by minimizing squared error of CDF values.
     Enforces positive shape/scale and loc >= 0. Returns optimised parameters."""
 
@@ -304,11 +344,16 @@ def fit_distribution_cdf(data, dist_name):
             return 1e10  # penalty for invalid params
 
     result = minimize(objective, init_params, bounds=bounds, method='L-BFGS-B')
+    opt_params = result.x
+    final_error = np.sum((dist.cdf(sorted_data, *opt_params) - ecdf) ** 2)
 
     if not result.success:
         raise RuntimeError(f"Optimization failed: {result.message}")
-
-    return result.x
+    
+    if return_error:
+        return opt_params, final_error # returns optimised parameters and associated error
+    else:
+        return opt_params # returns optimised parameters only
 
 
 def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name=''):
@@ -386,7 +431,7 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
 
         # Adding histogram of the randomly generated inputs / calculated results from those inputs to visually confirm they correspond to the function
         if samples is not None and len(samples) > 0:
-            ax[1].hist(samples, bins=50, density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
+            ax[1].hist(samples, bins=100, density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
 
     # Set y-limits for plots
     ax[0].set_ylim(0, 1.05)  # CDF always between 0–1

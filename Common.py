@@ -65,6 +65,20 @@ def import_excel():
     return (input_data, input_data_str)
 
 
+def import_json():
+    import pandas as pd
+    from tkinter import Tk, filedialog
+
+    # Opening then hiding the GUI window to be able to do the file-picking in a window next
+    root = Tk()
+    root.withdraw
+
+    # Opening the file dialog to select and excel input file
+    file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")], title="Select input file")
+
+    return file_path
+
+
 def find_var_value(input_data, input_data_str, var_name):
     try:
         row_index = input_data_str[input_data_str[0] == var_name].index[0]
@@ -199,14 +213,22 @@ def process_results(results, dist_str, chosen):
     import Distributions
     from scipy.stats import uniform, truncnorm, lognorm, weibull_min, weibull_max, gamma, rayleigh
 
-    dist = Distributions.dist_map(dist_str)
+    # dist = Distributions.dist_map(dist_str)
     output_fit_params = {}
     percentiles = [0.05, 0.5, 0.95]
 
     for name, info in results.items():
         if name in chosen:
-            output_fit_params[name] = Distributions.fit_distribution_cdf(info, dist_str)
+            if dist_str == 'Automated Fit':
+                dist_str, output_fit_params[name] = Distributions.fit_best_distribution_cdf(info)
+                dist = Distributions.dist_map(dist_str)
+
+            else:
+                dist = Distributions.dist_map(dist_str)
+                output_fit_params[name] = Distributions.fit_distribution_cdf(info, dist_str)
+
             x_percentiles = dist.ppf(percentiles, *output_fit_params[name])
+
             if np.isnan(x_percentiles).any():
                 print(f"No or insufficient information to fit distribtuion for {name}")
             else:
