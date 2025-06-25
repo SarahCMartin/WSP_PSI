@@ -27,6 +27,22 @@ def linear_extrapolate(x_new, x_known, y_known):
     return temp(x_new)
 
 
+def get_filename():
+    from tkinter import Tk, filedialog
+
+    # Opening then hiding the GUI window to be able to do the file-picking in a window next
+    root = Tk()
+    root.withdraw
+
+    # Ask user for a filename to save
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".json",
+        filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        title="Save your dictionary as a JSON file"
+    )
+    return file_path
+
+
 def import_excel():
     import pandas as pd
     from tkinter import Tk, filedialog
@@ -121,16 +137,17 @@ def generate_rolls(d, No_rolls):
     rolls = {}
     import numpy as np
     import Distributions
-    from scipy.stats import uniform, norm, lognorm, weibull_min, weibull_max, gamma, rayleigh
+    from scipy.stats import uniform, truncnorm, lognorm, weibull_min, weibull_max, gamma, rayleigh
 
     for name, info in d.items():
         LE = info["LE"]
         BE = info["BE"]
         HE = info["HE"]
+        Min = info["Min"]
         dist = info["Distribution to Fit"].lower()
 
         if dist == 'uniform':
-            loc, scale = Distributions.fit_uniform(LE, BE, HE)
+            loc, scale = Distributions.fit_uniform(LE, BE, HE) # No 'Min' for uniform distribution as LE is Min in this case to avoid having to manually calculate the 5% value where Min and Max are known
             # For case where LE=BE=HE, manually making this the value as statistical distribution will otherwise make it vary marginally
             if np.isclose(LE, BE) and np.isclose(BE, HE):
                 rolls[name] = np.full(No_rolls, BE)
@@ -139,34 +156,40 @@ def generate_rolls(d, No_rolls):
             #Distributions.plot_distribution_fit([LE, BE, HE], [0, 0.5, 1], uniform, (loc, scale), samples=rolls[name], param_name=name, dist_name='Uniform')
 
         elif dist == 'normal':
-            mu, sigma = Distributions.fit_normal_to_percentiles(LE, BE, HE)
-            rolls[name] = norm.rvs(loc=mu, scale=sigma, size=No_rolls)
-            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], norm, (mu, sigma), samples=rolls[name], param_name=name, dist_name='Normal')
+            mu, sigma = Distributions.fit_normal_to_percentiles(LE, BE, HE, Min)
+            rolls[name] = truncnorm.rvs(loc=mu, scale=sigma, size=No_rolls)
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], truncnorm, (mu, sigma), samples=rolls[name], param_name=name, dist_name='Normal')
 
         elif dist == 'log-normal':
-            s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE)
+            s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE, Min)
             rolls[name] = lognorm.rvs(s=s, loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], param_name=name, dist_name='Log-normal')
 
         elif dist == 'weibull':
-            c, loc, scale = Distributions.fit_weibull_to_percentiles(LE, BE, HE)
+            c, loc, scale = Distributions.fit_weibull_to_percentiles(LE, BE, HE, Min)
             rolls[name] = weibull_min.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_min, (c, loc, scale), samples=rolls[name], param_name=name, dist_name='Weibull')
 
-        elif dist == 'reverse-weibull':
-            c, loc, scale = Distributions.fit_reverseweibull_to_percentiles(LE, BE, HE)
-            rolls[name] = weibull_max.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
-            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_max, (c, loc, scale), samples=rolls[name], param_name=name, dist_name='Reverse-weibull')
+        # elif dist == 'reverse-weibull':
+        #     c, loc, scale = Distributions.fit_reverseweibull_to_percentiles(LE, BE, HE, Min)
+        #     rolls[name] = weibull_max.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
+        #     #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_max, (c, loc, scale), samples=rolls[name], param_name=name, dist_name='Reverse-weibull')
 
         elif dist == 'gamma':
-            a, loc, scale = Distributions.fit_gamma_to_percentiles(LE, BE, HE)
+            a, loc, scale = Distributions.fit_gamma_to_percentiles(LE, BE, HE, Min)
             rolls[name] = gamma.rvs(a=a, loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], gamma, (a, loc, scale), samples=rolls[name], param_name=name, dist_name='Gamma')
 
         elif dist == 'rayleigh':
-            loc, scale = Distributions.fit_rayleigh_to_percentiles(LE, BE, HE)
+            loc, scale = Distributions.fit_rayleigh_to_percentiles(LE, BE, HE, Min)
             rolls[name] = rayleigh.rvs(loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], rayleigh, (loc, scale), samples=rolls[name], param_name=name, dist_name='Rayleigh')
+
+        elif dist == 'automated fit':
+            dist_name, params = Distributions.fit_best_dist_to_percentiles(LE, BE, HE, Min)
+            dist_obj = Distributions.dist_map(dist_name)
+            rolls[name] = dist_obj.rvs(*params, size=No_rolls)
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], dist_obj, params, samples=rolls[name], param_name=name, dist_name=dist_name)
 
     return rolls
 
@@ -174,7 +197,7 @@ def generate_rolls(d, No_rolls):
 def process_results(results, dist_str, chosen):
     import numpy as np
     import Distributions
-    from scipy.stats import uniform, norm, lognorm, weibull_min, weibull_max, gamma, rayleigh
+    from scipy.stats import uniform, truncnorm, lognorm, weibull_min, weibull_max, gamma, rayleigh
 
     dist = Distributions.dist_map(dist_str)
     output_fit_params = {}
@@ -188,5 +211,6 @@ def process_results(results, dist_str, chosen):
                 print(f"No or insufficient information to fit distribtuion for {name}")
             else:
                 Distributions.plot_distribution_fit(x_percentiles, percentiles, dist, output_fit_params[name], info, name, dist_str)
+                print(f"{name} - LE: {x_percentiles[0]}, BE: {x_percentiles[1]}, HE: {x_percentiles[2]}")
 
 

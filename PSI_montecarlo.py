@@ -35,8 +35,8 @@ d.update({name: Common.find_var_list(input_data, input_data_str, name) for name 
 
 ###########################################################################
 # Read Pipe, Soil and Interface Parameters from Excel input file
-column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Distribution to Fit']
-data_type = [str, float, float, float, str] # corresponding to the headings in 'column headings'
+column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Min', 'Distribution to Fit']
+data_type = [str, float, float, float, float, str] # corresponding to the headings in 'column headings'
 start_heading = 'Inputs Requiring Probabalistic Distribution Fitting' # below which the table to read from starts (including column headings)
 
 p = Common.read_columns(input_data, input_data_str, column_headings, data_type, start_heading) # dictionary containing variables which need to be allocated statistically
@@ -112,6 +112,20 @@ end = time.time()
 print(f"Elapsed time: {end - start:.4f} seconds")
 
 ###########################################################################
+# Saving inputs and results
+file_name = Common.get_filename()
+
+import json
+
+if file_name: # Only save if user selected a file name
+    with open(file_name, "w") as f:
+        json.dump(results, f, indent=4)
+    print(f"Dictionary saved to {file_name}")
+else:
+    print("Results dictionary not saved")
+
+###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk', 'ff_lat_res', 'ff_ax']
 Common.process_results(list_results, d['Output_dist'], to_fit_and_plot)
+
