@@ -50,7 +50,7 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
     Qv_track = [Qv]
     W_track = [W*klay]
 
-    if abs(Qv - W_track[-1]) < 0.01: # prevents error if initial guess for z gives result within target tolerance
+    if abs(Qv - W_track[-1]) < 0.001: # prevents error if initial guess for z gives result within target tolerance
         z = z_ini
 
     while abs(Qv - W_track[-1]) > 0.001:
