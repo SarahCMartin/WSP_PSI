@@ -43,7 +43,7 @@ def get_filename():
     return file_path
 
 
-def import_excel():
+def import_excel(sheet_name, file_path=None):
     import pandas as pd
     from tkinter import Tk, filedialog
     import warnings
@@ -51,18 +51,19 @@ def import_excel():
     # Supressing a warning that happens everytime because the Excel sheet has drop downs for the distribution types
     warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
 
-    # Opening then hiding the GUI window to be able to do the file-picking in a window next
-    root = Tk()
-    root.withdraw
+    if file_path == None: # used the first time when the file needs to be selected
+        # Opening then hiding the GUI window to be able to do the file-picking in a window next
+        root = Tk()
+        root.withdraw
 
-    # Opening the file dialog to select and excel input file
-    file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")], title="Select input file")
+        # Opening the file dialog to select and excel input file
+        file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")], title="Select input file")
 
     # Importing the data from selected excel file - full and as strings for searching for variable names
-    input_data = pd.read_excel(file_path, sheet_name='Inputs', header=None)
+    input_data = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
     input_data_str = input_data.astype(str)
 
-    return (input_data, input_data_str)
+    return (input_data, input_data_str, file_path)
 
 
 def import_json():
@@ -88,6 +89,7 @@ def find_var_value(input_data, input_data_str, var_name):
     except IndexError:
         raise ValueError(f"Variable '{var_name}' not found in column A")
     
+
 def find_var_list(input_data, input_data_str, list_name):
     import pandas as pd
     try:
@@ -103,15 +105,19 @@ def find_var_list(input_data, input_data_str, list_name):
     except IndexError:
         raise ValueError(f"Variable '{list_name}' not found in column A")
 
+
 def read_columns(input_data, input_data_str, col_headings, data_type, start_heading):
     d = {} # Initialising empty dictionary
     type_map = dict(zip(col_headings, data_type)) # mapping data types with column headings for later when assigning into output dictionary
 
     # Find start of parameter block based on provided heading
-    try:
-        start_index = input_data_str[input_data_str.iloc[:,0].str.contains(start_heading, na=False)].index[0] + 2
-    except IndexError:
-        raise ValueError(f"Start heading '{start_heading}' not found in column A")
+    if start_heading == None: # Column heading are in the top row
+        start_index = 1
+    else:
+        try:
+            start_index = input_data_str[input_data_str.iloc[:,0].str.contains(start_heading, na=False)].index[0] + 2
+        except IndexError:
+            raise ValueError(f"Start heading '{start_heading}' not found in column A")
 
     # Find relevant column indices based on the column headings provided
     header_row = input_data_str.iloc[start_index - 1, :]
@@ -137,6 +143,7 @@ def read_columns(input_data, input_data_str, col_headings, data_type, start_head
     
     return d
 
+
 def restructure_col_to_row(d, column_headings):
     restructured_d = {}
     param_names = d[column_headings[0]]
@@ -147,8 +154,10 @@ def restructure_col_to_row(d, column_headings):
 
     return restructured_d
 
+
 def generate_rolls(d, No_rolls):
     rolls = {}
+    fit_info = {}
     import numpy as np
     import Distributions
     from scipy.stats import uniform, truncnorm, lognorm, weibull_min, weibull_max, gamma, rayleigh
@@ -162,6 +171,7 @@ def generate_rolls(d, No_rolls):
 
         if dist == 'uniform':
             loc, scale = Distributions.fit_uniform(LE, BE, HE) # No 'Min' for uniform distribution as LE is Min in this case to avoid having to manually calculate the 5% value where Min and Max are known
+            fit_info[name] = [dist, (loc,scale)]
             # For case where LE=BE=HE, manually making this the value as statistical distribution will otherwise make it vary marginally
             if np.isclose(LE, BE) and np.isclose(BE, HE):
                 rolls[name] = np.full(No_rolls, BE)
@@ -171,16 +181,19 @@ def generate_rolls(d, No_rolls):
 
         elif dist == 'normal':
             mu, sigma = Distributions.fit_normal_to_percentiles(LE, BE, HE, Min)
+            fit_info[name] = [dist, (mu, sigma)]
             rolls[name] = truncnorm.rvs(loc=mu, scale=sigma, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], truncnorm, (mu, sigma), samples=rolls[name], param_name=name, dist_name='Normal')
 
         elif dist == 'log-normal':
             s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE, Min)
+            fit_info[name] = [dist, (s,loc,scale)]
             rolls[name] = lognorm.rvs(s=s, loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], param_name=name, dist_name='Log-normal')
 
         elif dist == 'weibull':
             c, loc, scale = Distributions.fit_weibull_to_percentiles(LE, BE, HE, Min)
+            fit_info[name] = [dist, (c,loc,scale)]
             rolls[name] = weibull_min.rvs(c=c, loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], weibull_min, (c, loc, scale), samples=rolls[name], param_name=name, dist_name='Weibull')
 
@@ -191,21 +204,24 @@ def generate_rolls(d, No_rolls):
 
         elif dist == 'gamma':
             a, loc, scale = Distributions.fit_gamma_to_percentiles(LE, BE, HE, Min)
+            fit_info[name] = [dist, (a,loc,scale)]
             rolls[name] = gamma.rvs(a=a, loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], gamma, (a, loc, scale), samples=rolls[name], param_name=name, dist_name='Gamma')
 
         elif dist == 'rayleigh':
             loc, scale = Distributions.fit_rayleigh_to_percentiles(LE, BE, HE, Min)
+            fit_info[name] = [dist, (loc,scale)]
             rolls[name] = rayleigh.rvs(loc=loc, scale=scale, size=No_rolls)
             #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], rayleigh, (loc, scale), samples=rolls[name], param_name=name, dist_name='Rayleigh')
 
         elif dist == 'automated fit':
             dist_name, params = Distributions.fit_best_dist_to_percentiles(LE, BE, HE, Min)
+            fit_info[name] = [dist_name.lower(), params]
             dist_obj = Distributions.dist_map(dist_name)
             rolls[name] = dist_obj.rvs(*params, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], dist_obj, params, samples=rolls[name], param_name=name, dist_name=dist_name)
+            #Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], dist_obj, params, samples=rolls[name], param_name=name, dist_name=dist_name)
 
-    return rolls
+    return rolls, fit_info
 
 
 def process_results(results, dist_str, chosen):

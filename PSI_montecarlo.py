@@ -15,7 +15,7 @@ d = {} # empty dictionary to take input parameters to add to PSI_case object in 
 ###########################################################################
 # Import inputs from excel file 'PSI_Inputs.xlsx'
 import Common
-(input_data, input_data_str) = Common.import_excel()
+(input_data, input_data_str, file_path) = Common.import_excel('Inputs')
 
 import time
 start = time.time() # Start timing after selection of the excel file to accurately reflect the monte carlo time which could be optimised
@@ -44,8 +44,18 @@ p = Common.restructure_col_to_row(p, column_headings)
 
 ###########################################################################
 # Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
-random_inputs = Common.generate_rolls(p, d['No_rolls'])
-import numpy as np
+random_inputs, fit_info = Common.generate_rolls(p, d['No_rolls'])
+
+###########################################################################
+# Import correlations from excel then apply to the randomly generated variables
+(corr_data, corr_data_str, _) = Common.import_excel('Correlations', file_path)
+corr_headings = ['Parameter', 'Base Variable', 'Correlation Type', 'Correlation Index']
+corr_data_type = [str, str, str, float] # corresponding to the headings in 'column headings'
+
+corr = Common.read_columns(corr_data, corr_data_str, corr_headings, corr_data_type, None) # dictionary containing variables which need to be allocated statistically
+corr = Common.restructure_col_to_row(corr, corr_headings)
+import PSI_correlate
+random_inputs = PSI_correlate.apply_correlations(corr, random_inputs, fit_info)
 random_inputs['z_ini'] = [float(x / 2) for x in random_inputs['D']]
 
 ###########################################################################
