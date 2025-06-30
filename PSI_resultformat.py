@@ -172,3 +172,119 @@ def hard_coded_headings(fig, ax, param_name):
 
     # Adjust layout to give space for the subtitle
     fig.tight_layout(rect=[0, 0, 1, 0.95])
+
+
+def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
+    if name_base_var == None and name_changing_var == None:
+        return # if no name is provided this will make the plot the standard size and exit the function
+    
+    ###########################################################################
+    # Horizontal Axis - base variable
+    if name_base_var == 'D':
+        ax.set_xlabel("Diameter, D (m)")
+    elif name_base_var == 't':
+        ax.set_xlabel("Wall Thickness, t (m)")
+    elif name_base_var == 'W_empty':
+        ax.set_xlabel(r"Submerged Empty Unit Weight, $W_{empty}$ (kN/m)")
+    elif name_base_var == 'W_hydro':
+        ax.set_xlabel(r"Submerged Flooded Unit Weight, $W_{hydro}$ (kN/m)")
+    elif name_base_var == 'W_op':
+        ax.set_xlabel(r"Submerged Operational Unit Weight, $W_{op}$ (kN/m)")
+    elif name_base_var == 'alpha':
+        ax.set_xlabel(r"Pipe-Soil Interface Roughness, $\alpha$ (-)")
+    elif name_base_var == 'EI':
+        ax.set_xlabel(r"Bending Stiffness, EI (kNm$^2$)")
+    elif name_base_var == 'T0':
+        ax.set_xlabel(r"Lay Tension, $T_0$ (kN)")
+    elif name_base_var == 't_aslaid':
+        ax.set_xlabel(r"Time Empty before Hydrotest, $t_{\text{as-laid}}$ (years)")
+    elif name_base_var == 't_hydro':
+        ax.set_xlabel(r"Time Flooded during/after Hydrotest, $t_{flooded}$ (years)")
+    elif name_base_var == 't_preop':
+        ax.set_xlabel(r"Time Empty after Hydrotest, $t_{\text{pre-op}}$ (years)")
+    elif name_base_var == 'su_mudline':
+        ax.set_xlabel(r"Undrained Shear Strength at Mudline, $s_{{u,z=0}}$ (kPa)")
+    elif name_base_var == 'su_inv':
+        ax.set_xlabel(r"Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$ (kPa)")
+    elif name_base_var == 'delta_su':
+        ax.set_xlabel(r"Undrained Shear Strength Gradient, $\Delta s_{u}$ (kPa/m)")
+    elif name_base_var == 'gamma_sub':
+        ax.set_xlabel(r"Submerged Unit Weight of Soil, $\gamma\,'$ (kN/m$^3$)")
+    elif name_base_var == 'pipelay_St':
+        ax.set_xlabel(r"Pipelay Soil Sensitivity, $S_{{t,pipelay}}$ (-)")
+    elif name_base_var == 'lateral_St':
+        ax.set_xlabel(r"Lateral Soil Sensitivity, $S_{{t,lateral}}$ (-)")
+    elif name_base_var == 'cv':
+        ax.set_xlabel(r"Coefficient of Consolidation, $c_v$ (m$^2$/year)")
+    elif name_base_var == 'SHANSEP_S':
+        ax.set_xlabel(r"SHANSEP S for Soil-Soil, $S_{soil}$ (-)")
+    elif name_base_var == 'SHANSEP_m':
+        ax.set_xlabel(r"SHANSEP m for Soil-Soil, $m_{soil}$ (-)")
+    elif name_base_var == 'ka':
+        ax.set_xlabel(r"Pressure Resistance Coefficient, $k_a$ (-)")
+    elif name_base_var == 'kp':
+        ax.set_xlabel(r"Pressure Resistance Coefficient, $k_p$ (-)")
+    elif name_base_var == 'phi':
+        ax.set_xlabel(r"Friction Angle for Soil-Soil, $\phi$ ($^\circ$)")
+    elif name_base_var == 'int_SHANSEP_S':
+        ax.set_xlabel(r"SHANSEP S for Soil-Interface, $S_{int}$ (-)")
+    elif name_base_var == 'int_SHANSEP_m':
+        ax.set_xlabel(r"SHANSEP m for Soil-Interface, $m_{int}$ (-)")
+    elif name_base_var == 'delta':
+        ax.set_xlabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
+
+    
+    ###########################################################################
+    # Vertical Axis - changing variable
+    if name_changing_var == 'D':
+        ax.set_ylabel("Diameter, D (m)")
+    elif name_changing_var == 't':
+        ax.set_ylabel("Wall Thickness, t (m)")
+    elif name_changing_var == 'W_empty':
+        ax.set_ylabel(r"Submerged Empty Unit Weight, $W_{empty}$ (kN/m)")
+    elif name_changing_var == 'W_hydro':
+        ax.set_ylabel(r"Submerged Flooded Unit Weight, $W_{hydro}$ (kN/m)")
+    elif name_changing_var == 'W_op':
+        ax.set_ylabel(r"Submerged Operational Unit Weight, $W_{op}$ (kN/m)")
+    elif name_changing_var == 'alpha':
+        ax.set_ylabel(r"Pipe-Soil Interface Roughness, $\alpha$ (-)")
+    elif name_changing_var == 'EI':
+        ax.set_ylabel(r"Bending Stiffness, EI (kNm$^2$)")
+    elif name_changing_var == 'T0':
+        ax.set_ylabel(r"Lay Tension, $T_0$ (kN)")
+    elif name_changing_var == 't_aslaid':
+        ax.set_ylabel(r"Time Empty before Hydrotest, $t_{\text{as-laid}}$ (years)")
+    elif name_changing_var == 't_hydro':
+        ax.set_ylabel(r"Time Flooded during/after Hydrotest, $t_{flooded}$ (years)")
+    elif name_changing_var == 't_preop':
+        ax.set_ylabel(r"Time Empty after Hydrotest, $t_{\text{pre-op}}$ (years)")
+    elif name_changing_var == 'su_mudline':
+        ax.set_ylabel(r"Undrained Shear Strength at Mudline, $s_{{u,z=0}}$ (kPa)")
+    elif name_changing_var == 'su_inv':
+        ax.set_ylabel(r"Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$ (kPa)")
+    elif name_changing_var == 'delta_su':
+        ax.set_ylabel(r"Undrained Shear Strength Gradient, $\Delta s_{u}$ (kPa/m)")
+    elif name_changing_var == 'gamma_sub':
+        ax.set_ylabel(r"Submerged Unit Weight of Soil, $\gamma\,'$ (kN/m$^3$)")
+    elif name_changing_var == 'pipelay_St':
+        ax.set_ylabel(r"Pipelay Soil Sensitivity, $S_{{t,pipelay}}$ (-)")
+    elif name_changing_var == 'lateral_St':
+        ax.set_ylabel(r"Lateral Soil Sensitivity, $S_{{t,lateral}}$ (-)")
+    elif name_changing_var == 'cv':
+        ax.set_ylabel(r"Coefficient of Consolidation, $c_v$ (m$^2$/year)")
+    elif name_changing_var == 'SHANSEP_S':
+        ax.set_ylabel(r"SHANSEP S for Soil-Soil, $S_{soil}$ (-)")
+    elif name_changing_var == 'SHANSEP_m':
+        ax.set_ylabel(r"SHANSEP m for Soil-Soil, $m_{soil}$ (-)")
+    elif name_changing_var == 'ka':
+        ax.set_ylabel(r"Pressure Resistance Coefficient, $k_a$ (-)")
+    elif name_changing_var == 'kp':
+        ax.set_ylabel(r"Pressure Resistance Coefficient, $k_p$ (-)")
+    elif name_changing_var == 'phi':
+        ax.set_ylabel(r"Friction Angle for Soil-Soil, $\phi$ ($^\circ$)")
+    elif name_changing_var == 'int_SHANSEP_S':
+        ax.set_ylabel(r"SHANSEP S for Soil-Interface, $S_{int}$ (-)")
+    elif name_changing_var == 'int_SHANSEP_m':
+        ax.set_ylabel(r"SHANSEP m for Soil-Interface, $m_{int}$ (-)")
+    elif name_changing_var == 'delta':
+        ax.set_ylabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")

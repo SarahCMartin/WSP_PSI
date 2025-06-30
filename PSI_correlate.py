@@ -8,8 +8,10 @@ from scipy.stats import rankdata
 from scipy.stats.distributions import norm
 import itertools
 import warnings
+import PSI_resultformat
+import os
 
-def apply_correlations(correlation_data, random_inputs, fit_info):
+def apply_correlations(correlation_data, random_inputs, results_path=None):
     warnings.filterwarnings("default")
 
     correlated_random_inputs = {}
@@ -22,12 +24,12 @@ def apply_correlations(correlation_data, random_inputs, fit_info):
         
         else:
             corr_index = info["Correlation Index"]
-            correlated_random_inputs[name] = correlate_variable_pair(random_inputs[correlated_var], random_inputs[name], fit_info[correlated_var], fit_info[name], corr_index)
+            correlated_random_inputs[name] = correlate_variable_pair(random_inputs[correlated_var], random_inputs[name], corr_index, correlated_var, name, results_path)
 
     return correlated_random_inputs
 
 
-def correlate_variable_pair(base_variable, changing_variable, base_var_fit_info, changing_var_fit_info, corr_index):
+def correlate_variable_pair(base_variable, changing_variable, corr_index, name_base_var, name_changing_var, results_path=None):
     if len(base_variable) == len(changing_variable):
         no_rolls = len(base_variable)
     else:
@@ -36,18 +38,45 @@ def correlate_variable_pair(base_variable, changing_variable, base_var_fit_info,
 
     #blank_col = np.zeros(no_rolls)
     data = np.stack((base_variable, changing_variable), axis=1)
+    corr_matrix_before = np.corrcoef(data, rowvar=False)
+    corr_index_before = corr_matrix_before[0,1]
+    #print(corr_matrix_before)
     #corrplot0 = plotcorr(data.T, labels=["Base Variable - before", "Changing Variable - before"])
-    plt.scatter(data[:,0], data[:,1])
-    #plt.show()
+    fig, ax = plt.subplots()
+    ax.scatter(data[:,0], data[:,1], s=20)
+    xmin = min(data[:,0])
+    xmax = max(data[:,0])
+    ymin = min(data[:,1])
+    ymax = max(data[:,1])
 
     c_target = np.array([[  1.0, corr_index],
                         [  corr_index,  1.0]])
 
     new_data = induce_correlations(data, c_target)
+    corr_matrix_after = np.corrcoef(new_data, rowvar=False)
+    actual_corr_index = corr_matrix_after[0,1]
+    #print(corr_matrix_after)
     
     #corrplot1 = plotcorr(new_data.T, labels=["Base Variable - after", "Changing Variable - after"])
-    plt.scatter(new_data[:,0], new_data[:,1])
+    ax.scatter(new_data[:,0], new_data[:,1], s=20)
+    xmin = min(xmin, min(new_data[:,0]))
+    xmax = max(xmax, max(new_data[:,0]))
+    ymin = min(ymin, min(new_data[:,1]))
+    ymax = max(ymax, max(new_data[:,1]))
+
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
+    ax.set_title('Correlation of Input Variables')
+    ax.text(0.96, 0.96, f'Initial Correlation Index: {corr_index_before:.2f}\nTarget Correlation Index: {corr_index:.2f}\nActual Correlation Index: {actual_corr_index:.2f}', transform=ax.transAxes, fontsize=12, fontweight='bold', ha='right', va='top')
+    PSI_resultformat.hard_coded_corr_headings(ax, name_base_var, name_changing_var)
     plt.show()
+
+    from datetime import datetime
+    time_stamp = datetime.now().strftime('%Y%m%d_%H%M') # Generate a date-time stamp
+    save_name = f'{name_changing_var}_to_{name_base_var}_Correlation_{time_stamp}.pdf'
+    save_path = results_path / save_name
+    fig.savefig(save_path, bbox_inches='tight')
+    plt.close(fig)
 
     return new_data[:,1]
 

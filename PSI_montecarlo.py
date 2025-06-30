@@ -17,6 +17,15 @@ d = {} # empty dictionary to take input parameters to add to PSI_case object in 
 import Common
 (input_data, input_data_str, file_path) = Common.import_excel('Inputs')
 
+from pathlib import Path
+parent_dir = Path(Common.select_folder())
+if parent_dir.name.lower() == "results":
+    results_path = parent_dir
+else:
+    results_path = parent_dir / 'Results'
+    if not results_path.exists():
+        results_path.mkdir()
+
 import time
 start = time.time() # Start timing after selection of the excel file to accurately reflect the monte carlo time which could be optimised
 
@@ -44,7 +53,7 @@ p = Common.restructure_col_to_row(p, column_headings)
 
 ###########################################################################
 # Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
-random_inputs, fit_info = Common.generate_rolls(p, d['No_rolls'])
+random_inputs, _ = Common.generate_rolls(p, d['No_rolls'], results_path)
 
 ###########################################################################
 # Import correlations from excel then apply to the randomly generated variables
@@ -55,7 +64,7 @@ corr_data_type = [str, str, str, float] # corresponding to the headings in 'colu
 corr = Common.read_columns(corr_data, corr_data_str, corr_headings, corr_data_type, None) # dictionary containing variables which need to be allocated statistically
 corr = Common.restructure_col_to_row(corr, corr_headings)
 import PSI_correlate
-random_inputs = PSI_correlate.apply_correlations(corr, random_inputs, fit_info)
+random_inputs = PSI_correlate.apply_correlations(corr, random_inputs, results_path)
 random_inputs['z_ini'] = [float(x / 2) for x in random_inputs['D']]
 
 ###########################################################################
@@ -123,6 +132,7 @@ print(f"Elapsed time: {end - start:.4f} seconds")
 
 ###########################################################################
 # Saving inputs and results
+os.chdir(results_path)
 file_name = Common.get_filename()
 
 import json
@@ -137,5 +147,6 @@ else:
 ###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk', 'ff_lat_res', 'ff_ax']
-Common.process_results(list_results, d['Output_dist'], to_fit_and_plot)
+Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, results_path)
 
+os.chdir(parent_dir)

@@ -356,7 +356,7 @@ def fit_distribution_cdf(data, dist_name, return_error=False):
         return opt_params # returns optimised parameters only
 
 
-def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name=''):
+def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name='', results_path=None):
     """Plots the fitted distribution's CDF and PDF along with input percentiles, inputs:
         x_percentiles (list or np.array): The x-values at given percentiles (e.g., [LE, BE, HE]).
         percentiles (list or np.array): Percentiles corresponding to x_percentiles (e.g., [0.05, 0.5, 0.95]).
@@ -368,6 +368,7 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     import matplotlib.pyplot as plt
     from statsmodels.distributions.empirical_distribution import ECDF
     import PSI_resultformat
+    import os
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4))
     # x = np.array(x_percentiles)
@@ -450,9 +451,15 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     ax[1].legend()
     
     PSI_resultformat.hard_coded_headings(fig, ax, param_name)
+    #plt.show()
 
-    #plt.tight_layout()
-    plt.show()
+    from datetime import datetime
+    time_stamp = datetime.now().strftime('%Y%m%d_%H%M') # Generate a date-time stamp
+    save_name = f'{param_name}_{dist_name}_CDF_and_PDF_{time_stamp}.pdf'
+    save_path = results_path / save_name
+    fig.savefig(save_path, bbox_inches='tight')
+    plt.close(fig)
+
 
 def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.05):
     """Returns (x_min, x_max) for plotting. Handles cases where all x are equal."""
