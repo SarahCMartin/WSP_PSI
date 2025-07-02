@@ -288,3 +288,114 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_ylabel(r"SHANSEP m for Soil-Interface, $m_{int}$ (-)")
     elif name_changing_var == 'delta':
         ax.set_ylabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
+
+
+def hard_coded_caption(param_name):    
+    if param_name == None:
+        return # if no name is provided then exit the function
+    
+    ###########################################################################
+    # Inputs
+    elif param_name == 'D':
+        param_string = "Diameter, D"
+    elif param_name == 't':
+        param_string = "Wall Thickness, t"
+    elif param_name == 'W_empty':
+        param_string = r"Submerged Empty Unit Weight, $W_{empty}$"
+    elif param_name == 'W_hydro':
+        param_string = r"Submerged Flooded Unit Weight, $W_{hydro}$"
+    elif param_name == 'W_op':
+        param_string = r"Submerged Operational Unit Weight, $W_{op}$"
+    elif param_name == 'alpha':
+        param_string = r"Pipe-Soil Interface Roughness, $\alpha$"
+    elif param_name == 'EI':
+        param_string = r"Bending Stiffness, EI"
+    elif param_name == 'T0':
+        param_string = r"Lay Tension, $T_0$"
+    elif param_name == 't_aslaid':
+        param_string = r"Time Empty before Hydrotest, $t_{\text{as-laid}}$"
+    elif param_name == 't_hydro':
+        param_string = r"Time Flooded during/after Hydrotest, $t_{flooded}$"
+    elif param_name == 't_preop':
+        param_string = r"Time Empty after Hydrotest, $t_{\text{pre-op}}$"
+    elif param_name == 'su_mudline':
+        param_string = r"Undrained Shear Strength at Mudline, $s_{{u,z=0}}$"
+    elif param_name == 'su_inv':
+        param_string = r"Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$"
+    elif param_name == 'delta_su':
+        param_string = r"Undrained Shear Strength Gradient, $\Delta s_{u}$"
+    elif param_name == 'gamma_sub':
+        param_string = r"Submerged Unit Weight of Soil, $\gamma\,'$"
+    elif param_name == 'pipelay_St':
+        param_string = r"Pipelay Soil Sensitivity, $S_{{t,pipelay}}$"
+    elif param_name == 'lateral_St':
+        param_string = r"Lateral Soil Sensitivity, $S_{{t,lateral}}$"
+    elif param_name == 'cv':
+        param_string = r"Coefficient of Consolidation, $c_v$"
+    elif param_name == 'SHANSEP_S':
+        param_string = r"SHANSEP S for Soil-Soil, $S_{soil}$"
+    elif param_name == 'SHANSEP_m':
+        param_string = r"SHANSEP m for Soil-Soil, $m_{soil}$"
+    elif param_name == 'ka':
+        param_string = r"Pressure Resistance Coefficient, $k_a$"
+    elif param_name == 'kp':
+        param_string = r"Pressure Resistance Coefficient, $k_p$"
+    elif param_name == 'phi':
+        param_string = r"Friction Angle for Soil-Soil, $\phi$"
+    elif param_name == 'int_SHANSEP_S':
+        param_string = r"SHANSEP S for Soil-Interface, $S_{int}$"
+    elif param_name == 'int_SHANSEP_m':
+        param_string = r"SHANSEP m for Soil-Interface, $m_{int}$"
+    elif param_name == 'delta':
+        param_string = r"Friction Angle for Soil-Interface, $\delta$"
+
+    ###########################################################################
+    # Outputs
+    elif param_name == 'z_aslaid':
+        param_string = r"As-laid Embedment, $z_{\text{as-laid}}$"
+    elif param_name == 'z_hydro':
+        param_string = r"Hydrotest Embedment, $z_{hydro}$"
+    elif param_name == 'z_res':
+        param_string = r"Residual Embedment, $z_{res}$"
+    elif param_name == 'ff_lat_brk':
+        param_string = r"Lateral Breakout FF, $\mu_{{lat,brk}}$"
+    elif param_name == 'ff_lat_res':
+        param_string = r"Lateral Residual FF, $\mu_{{lat,res}}$"
+    elif param_name == 'ff_ax':
+        param_string = r"Axial FF, $\mu_{{ax}}$"
+
+    else:
+        return # if name doesn't match those with a hard coded option then exit the function
+    
+    return param_string
+
+
+def hard_coded_units(param_name):
+    if param_name == None:
+        unit = '(-)'
+    
+    elif param_name == 'D' or param_name == 't' or param_name == 'z_aslaid' or param_name == 'z_hydro' or param_name == 'z_res':
+        unit = '(m)'
+    elif param_name == 'W_empty' or param_name == 'W_hydro' or param_name == 'W_op':
+        unit = '(kN/m)'
+    elif param_name == 'EI':
+        unit = r"(kNm$^2$)"
+    elif param_name == 'T0':
+        unit = "(kN)"
+    elif param_name == 't_aslaid' or param_name == 't_hydro' or param_name == 't_preop':
+        unit = '(years)'
+    elif param_name == 'su_mudline' or param_name == 'su_inv':
+        unit = '(kPa)'
+    elif param_name == 'delta_su':
+        unit = '(kPa/m)'
+    elif param_name == 'gamma_sub':
+        unit = r"(kN/m$^3$)"
+    elif param_name == 'cv':
+        unit = r"(m$^2$/year)"
+    elif param_name == 'phi' or param_name == 'delta':
+        unit = r"($^\circ$)"
+
+    else:
+        unit = '(-)'
+    
+    return unit

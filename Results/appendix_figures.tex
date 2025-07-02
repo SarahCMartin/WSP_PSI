@@ -1,0 +1,564 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[margin=2cm]{geometry}
+
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\@makecol}{\vskip \topskip}{\vskip 0pt}{}{}
+\makeatother
+
+\renewcommand{\floatpagefraction}{1}
+\setlength{\abovecaptionskip}{2pt}
+\setlength{\belowcaptionskip}{2pt}
+
+\begin{document}
+\section*{Input Variables}
+
+\subsection*{Diameter, D}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Diameter, D}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (m)\ & BE (m)\ & Max (m)\ \\
+\hline
+0.3299 & 0.3299 & 0.3299 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{D_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Diameter, D}
+\end{figure}
+\clearpage
+\subsection*{Wall Thickness, t}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Wall Thickness, t}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (m)\ & BE (m)\ & Max (m)\ \\
+\hline
+0.0266 & 0.0266 & 0.0266 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{t_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Wall Thickness, t}
+\end{figure}
+\clearpage
+\subsection*{Submerged Empty Unit Weight, $W_{empty}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Submerged Empty Unit Weight, $W_{empty}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (kN/m)\ & BE (kN/m)\ & Max (kN/m)\ \\
+\hline
+0.8975 & 0.8975 & 0.8975 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{W_empty_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Submerged Empty Unit Weight, $W_{empty}$}
+\end{figure}
+\clearpage
+\subsection*{Submerged Flooded Unit Weight, $W_{hydro}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Submerged Flooded Unit Weight, $W_{hydro}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (kN/m)\ & BE (kN/m)\ & Max (kN/m)\ \\
+\hline
+1.5022 & 1.5022 & 1.5022 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{W_hydro_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Submerged Flooded Unit Weight, $W_{hydro}$}
+\end{figure}
+\clearpage
+\subsection*{Submerged Operational Unit Weight, $W_{op}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Submerged Operational Unit Weight, $W_{op}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (kN/m) \ & BE (kN/m)\ & HE (kN/m)\ & Min Allowable (kN/m)\ \\
+\hline
+0.9565 & 1.0155 & 1.0745 & 0.8975 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{W_op_Weibull_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Submerged Operational Unit Weight, $W_{op}$}
+\end{figure}
+\clearpage
+\subsection*{Pipe-Soil Interface Roughness, $\alpha$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Pipe-Soil Interface Roughness, $\alpha$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (-)\ & BE (-)\ & Max (-)\ \\
+\hline
+0.5 & 0.5 & 0.5 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{alpha_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Pipe-Soil Interface Roughness, $\alpha$}
+\end{figure}
+\clearpage
+\subsection*{Bending Stiffness, EI}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Bending Stiffness, EI}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (kNm$^2$)\ & BE (kNm$^2$)\ & Max (kNm$^2$)\ \\
+\hline
+61675.0 & 61675.0 & 61675.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{EI_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Bending Stiffness, EI}
+\end{figure}
+\clearpage
+\subsection*{Lay Tension, $T_0$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Lay Tension, $T_0$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (kN) \ & BE (kN)\ & HE (kN)\ & Min Allowable (kN)\ \\
+\hline
+27.0 & 100.0 & 236.0 & 10.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{T0_Gamma_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Lay Tension, $T_0$}
+\end{figure}
+\clearpage
+\subsection*{Time Empty before Hydrotest, $t_{\text{as-laid}}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Time Empty before Hydrotest, $t_{\text{as-laid}}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (years)\ & BE (years)\ & Max (years)\ \\
+\hline
+0.08333333333333333 & 0.08333333333333333 & 0.08333333333333333 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{t_aslaid_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Time Empty before Hydrotest, $t_{\text{as-laid}}$}
+\end{figure}
+\clearpage
+\subsection*{Time Flooded during/after Hydrotest, $t_{flooded}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Time Flooded during/after Hydrotest, $t_{flooded}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (years)\ & BE (years)\ & Max (years)\ \\
+\hline
+0.041666666666666664 & 0.041666666666666664 & 0.041666666666666664 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{t_hydro_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Time Flooded during/after Hydrotest, $t_{flooded}$}
+\end{figure}
+\clearpage
+\subsection*{Time Empty after Hydrotest, $t_{\text{pre-op}}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Time Empty after Hydrotest, $t_{\text{pre-op}}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (years)\ & BE (years)\ & Max (years)\ \\
+\hline
+0.08333333333333333 & 0.08333333333333333 & 0.08333333333333333 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{t_preop_Uniform_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Time Empty after Hydrotest, $t_{\text{pre-op}}$}
+\end{figure}
+\clearpage
+\subsection*{Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (kPa) \ & BE (kPa)\ & HE (kPa)\ & Min Allowable (kPa)\ \\
+\hline
+0.0 & 0.35 & 3.57 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{su_mudline_Gamma_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (kPa) \ & BE (kPa)\ & HE (kPa)\ & Min Allowable (kPa)\ \\
+\hline
+1.33 & 4.84 & 14.29 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{su_inv_Gamma_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{su_inv_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Undrained Shear Strength at $z_{inv}$, $s_{{u,z=inv}}$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{Undrained Shear Strength Gradient, $\Delta s_{u}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Undrained Shear Strength Gradient, $\Delta s_{u}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (kPa/m) \ & BE (kPa/m)\ & HE (kPa/m)\ & Min Allowable (kPa/m)\ \\
+\hline
+1.33 & 3.0 & 7.72 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{delta_su_Log-normal_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Undrained Shear Strength Gradient, $\Delta s_{u}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{delta_su_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Undrained Shear Strength Gradient, $\Delta s_{u}$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{Submerged Unit Weight of Soil, $\gamma\,'$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Submerged Unit Weight of Soil, $\gamma\,'$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (kN$^3$) \ & BE (kN$^3$)\ & HE (kN$^3$)\ & Min Allowable (kN$^3$)\ \\
+\hline
+3.04 & 4.2 & 6.96 & 1.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{gamma_sub_Log-normal_CDF_and_PDF_20250630_1632.pdf}
+\caption{CDF and PDF for Submerged Unit Weight of Soil, $\gamma\,'$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{gamma_sub_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Submerged Unit Weight of Soil, $\gamma\,'$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{Pipelay Soil Sensitivity, $S_{{t,pipelay}}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Pipelay Soil Sensitivity, $S_{{t,pipelay}}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (-)\ & BE (-)\ & Max (-)\ \\
+\hline
+3.0 & 5.0 & 7.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{pipelay_St_Uniform_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Pipelay Soil Sensitivity, $S_{{t,pipelay}}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{pipelay_St_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Pipelay Soil Sensitivity, $S_{{t,pipelay}}$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{Lateral Soil Sensitivity, $S_{{t,lateral}}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Lateral Soil Sensitivity, $S_{{t,lateral}}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (-) \ & BE (-)\ & HE (-)\ & Min Allowable (-)\ \\
+\hline
+1.5 & 4.33 & 8.33 & 1.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{lateral_St_Weibull_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Lateral Soil Sensitivity, $S_{{t,lateral}}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{lateral_St_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Lateral Soil Sensitivity, $S_{{t,lateral}}$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{Coefficient of Consolidation, $c_v$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Coefficient of Consolidation, $c_v$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (m$^2$/year) \ & BE (m$^2$/year)\ & HE (m$^2$/year)\ & Min Allowable (m$^2$/year)\ \\
+\hline
+0.44 & 17.73 & 503.82 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{cv_Gamma_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Coefficient of Consolidation, $c_v$}
+\end{figure}
+\clearpage
+\subsection*{SHANSEP S for Soil-Soil, $S_{soil}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for SHANSEP S for Soil-Soil, $S_{soil}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (-) \ & BE (-)\ & HE (-)\ & Min Allowable (-)\ \\
+\hline
+0.22 & 0.285 & 0.35 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{SHANSEP_S_Weibull_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for SHANSEP S for Soil-Soil, $S_{soil}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{SHANSEP_S_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between SHANSEP S for Soil-Soil, $S_{soil}$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{SHANSEP m for Soil-Soil, $m_{soil}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for SHANSEP m for Soil-Soil, $m_{soil}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (-)\ & BE (-)\ & Max (-)\ \\
+\hline
+0.4 & 0.4 & 0.4 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{SHANSEP_m_Uniform_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for SHANSEP m for Soil-Soil, $m_{soil}$}
+\end{figure}
+\clearpage
+\subsection*{Pressure Resistance Coefficient, $k_a$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Pressure Resistance Coefficient, $k_a$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (-)\ & BE (-)\ & Max (-)\ \\
+\hline
+2.0 & 2.25 & 2.5 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{ka_Uniform_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Pressure Resistance Coefficient, $k_a$}
+\end{figure}
+\clearpage
+\subsection*{Pressure Resistance Coefficient, $k_p$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Pressure Resistance Coefficient, $k_p$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (-)\ & BE (-)\ & Max (-)\ \\
+\hline
+2.0 & 2.25 & 2.5 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{kp_Uniform_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Pressure Resistance Coefficient, $k_p$}
+\end{figure}
+\clearpage
+\subsection*{Friction Angle for Soil-Soil, $\phi$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Friction Angle for Soil-Soil, $\phi$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE ($^\circ$) \ & BE ($^\circ$)\ & HE ($^\circ$)\ & Min Allowable ($^\circ$)\ \\
+\hline
+24.0 & 30.0 & 42.0 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{phi_Log-normal_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Friction Angle for Soil-Soil, $\phi$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{phi_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Friction Angle for Soil-Soil, $\phi$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{SHANSEP S for Soil-Interface, $S_{int}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for SHANSEP S for Soil-Interface, $S_{int}$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE (-) \ & BE (-)\ & HE (-)\ & Min Allowable (-)\ \\
+\hline
+0.22 & 0.285 & 0.35 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{int_SHANSEP_S_Weibull_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for SHANSEP S for Soil-Interface, $S_{int}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{int_SHANSEP_S_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between SHANSEP S for Soil-Interface, $S_{int}$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\subsection*{SHANSEP m for Soil-Interface, $m_{int}$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for SHANSEP m for Soil-Interface, $m_{int}$}
+\begin{tabular}{|c|c|c|}
+\hline
+Min (-)\ & BE (-)\ & Max (-)\ \\
+\hline
+0.4 & 0.4 & 0.4 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{int_SHANSEP_m_Uniform_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for SHANSEP m for Soil-Interface, $m_{int}$}
+\end{figure}
+\clearpage
+\subsection*{Friction Angle for Soil-Interface, $\delta$}
+\begin{table}[h!]
+\centering
+\caption{Probablistic Inputs for Friction Angle for Soil-Interface, $\delta$}
+\begin{tabular}{|c|c|c|c|}
+\hline
+LE ($^\circ$) \ & BE ($^\circ$)\ & HE ($^\circ$)\ & Min Allowable ($^\circ$)\ \\
+\hline
+26.6 & 34.6 & 41.3 & 0.0 \\
+\hline
+\end{tabular}
+\end{table}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{delta_Weibull_CDF_and_PDF_20250630_1633.pdf}
+\caption{CDF and PDF for Friction Angle for Soil-Interface, $\delta$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{delta_to_su_mudline_Correlation_20250630_1633.pdf}
+\caption{Correlation between Friction Angle for Soil-Interface, $\delta$ and Undrained Shear Strength at Mudline, $s_{{u,z=0}}$}
+\end{figure}
+\clearpage
+\clearpage
+\section*{Output Variables}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{z_aslaid_Weibull_CDF_and_PDF_20250630_1639.pdf}
+\caption{CDF and PDF for As-laid Embedment, $z_{\text{as-laid}}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{z_hydro_Weibull_CDF_and_PDF_20250630_1639.pdf}
+\caption{CDF and PDF for Hydrotest Embedment, $z_{hydro}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{ff_ax_Weibull_CDF_and_PDF_20250630_1638.pdf}
+\caption{CDF and PDF for Axial FF, $\mu_{{ax}}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{ff_lat_brk_Weibull_CDF_and_PDF_20250630_1639.pdf}
+\caption{CDF and PDF for Lateral Breakout FF, $\mu_{{lat,brk}}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{z_res_Weibull_CDF_and_PDF_20250630_1639.pdf}
+\caption{CDF and PDF for Residual Embedment, $z_{res}$}
+\end{figure}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=1\textwidth]{ff_lat_res_Weibull_CDF_and_PDF_20250630_1639.pdf}
+\caption{CDF and PDF for Lateral Residual FF, $\mu_{{lat,res}}$}
+\end{figure}
+\end{document}
