@@ -31,15 +31,15 @@ start = time.time() # Start timing after selection of the excel file to accurate
 
 ###########################################################################
 # Read Monte Carlo and Model Selection Parameters from Excel input file
-var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_model', 'Lat_brk_suction', 'Lat_res_model', 'Lat_res_suction', 'Emb_res_model', 'Ax_model', 'Lat_cyc_model', 'su_profile', 'z_su_inv', 'Output_dist']
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Lat_cyc_model', 'su_profile', 'z_su_inv', 'Output_dist']
 d = {name: Common.find_var_value(input_data, input_data_str, name) for name in var_names} # dictionary containing constant parameters
 
 # Handle special logic for z_su_inv
 if d['su_profile'] != 1:
     d['z_su_inv'] = []
 
-# Adding separately model inputs which can be in the form of a list, currently only No_cycles
-list_names = ['No_cycles']
+# Adding separately model inputs which can be in the form of a list
+list_names = ['Lat_brk_model', 'Lat_brk_weighting', 'Lat_res_model', 'Lat_res_weighting', 'Ax_model', 'No_cycles']
 d.update({name: Common.find_var_list(input_data, input_data_str, name) for name in list_names})
 
 ###########################################################################

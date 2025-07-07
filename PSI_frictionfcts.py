@@ -36,7 +36,7 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
         ff_lat_brk = F_lat_brk/W # friction factor is ratio of resistance to vertical force 
     
     ###########################################################################
-    # Merifield et al 2008 approach: generating empirical H-V envelopes, Vmax and Hmax formulation from Merifield et al 2009
+    # Generalised FE H-V Capacity Envelopes after Merifield et al 2008 approach, Vmax and Hmax formulation from Merifield et al 2009, formulations extended by WSP
     elif Lat_brk_model == 2:
         # Note same approach applied to take average strength as z - min(z,D)/2 rather than z/2 to better reflect actual su which would be relevant where z > D; note Merifield et al 2009 assume a uniform su so they do not specify an averaging method
         su_horz = np.interp(z - min(z,D)/2, insitu_calc_depths, lat_su_inc) # for Hmax calc
@@ -144,6 +144,11 @@ def latres(Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_ve
     if Lat_res_model == 0:
         # See notes for DNV UD lat brk Model 1 above in latbrk function, same calculation so passing to that function with relevant inputs for the residual scenario, i.e. residual z and B, both strength increase profiles are the insitu as material either side of pipe has not been disturbed during laying as assumed for latbrk
         [ff_lat_res, _] = latbrk(0, Lat_res_suction, D, W, [], int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, [], [], gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
+
+    ###########################################################################
+    # Generalised FE H-V Capacity Envelopes after Merifield et al 2008 approach, Vmax and Hmax formulation from Merifield et al 2009, formulations extended by WSP. Adjustments to lat brk formulation as above.
+    if Lat_res_model == 2:
+        [ff_lat_res, _] = latbrk(2, [], D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
 
     ###########################################################################
     # DNVGL-RP-F114 Drained Lateral Breakout Model 1, Section 4.4.2.3 with embedment reduced to post-breakout depth. Adjustments to lat brk formulation as above.
