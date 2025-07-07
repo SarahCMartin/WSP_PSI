@@ -107,11 +107,11 @@ for var in ordered_input:
     if dist == 'Uniform': # Table headings to be Min and Max instead of LE and HE
         latex_content += "\\begin{tabular}{|c|c|c|}\n\\hline\n"
         latex_content += f"Min {unit}\\ & BE {unit}\\ & Max {unit}\\ \\\\\n\\hline\n"
-        latex_content += f"{LE} & {BE} & {HE} \\\\\n\\hline\n"
+        latex_content += f"{Common.format_sigfig(LE,3)} & {Common.format_sigfig(BE,3)} & {Common.format_sigfig(HE,3)} \\\\\n\\hline\n"
     else: 
         latex_content += "\\begin{tabular}{|c|c|c|c|}\n\\hline\n"
         latex_content += f"LE {unit} \\ & BE {unit}\\ & HE {unit}\\ & Min Allowable {unit}\\ \\\\\n\\hline\n"
-        latex_content += f"{LE} & {BE} & {HE} & {min} \\\\\n\\hline\n"
+        latex_content += f"{Common.format_sigfig(LE,3)} & {Common.format_sigfig(BE,3)} & {Common.format_sigfig(HE,3)} & {Common.format_sigfig(min,3)} \\\\\n\\hline\n"
     latex_content += "\\end{tabular}\n\\end{table}\n"
 
     # Add figure

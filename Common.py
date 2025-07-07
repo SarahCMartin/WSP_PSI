@@ -27,6 +27,31 @@ def linear_extrapolate(x_new, x_known, y_known):
     return temp(x_new)
 
 
+def format_sigfig(val, sigfigs):
+    import math
+    if val == 0:
+        return f"{0:.{sigfigs - 1}f}"
+
+    magnitude = math.floor(math.log10(abs(val)))
+    decimals = sigfigs - magnitude - 1
+
+    if decimals > 0:
+        output = f"{val:.{decimals}f}"
+
+        # Pad with trailing zeros if needed
+        int_part, frac_part = output.split('.')
+        if len(frac_part) < decimals:
+            frac_part = frac_part.ljust(decimals, '0')
+        output = f"{int_part}.{frac_part}"
+    else:
+        # Round to nearest significant digit without decimal places
+        rounding_factor = 10 ** abs(decimals)
+        rounded_val = round(val / rounding_factor) * rounding_factor
+        output = f"{int(rounded_val)}"
+
+    return output
+
+
 def get_filename():
     from tkinter import Tk, filedialog
 
