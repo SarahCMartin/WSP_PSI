@@ -1,7 +1,7 @@
 import Common
 import numpy as np
 
-def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, delta, z, B):
+def latbrk(PhaseNo, Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, delta, z, B):
     """This function calculates the lateral breakout friction factors using 
     the chosen method with embedment and strength from previous calculation 
     stages."""
@@ -107,6 +107,18 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
         F_lat_brk = Hmax*(beta*((W/Vmax)**beta1)*((1-W/Vmax)**beta2))
         ff_lat_brk = F_lat_brk/W # friction factor is ratio of resistance to vertical force
 
+        if PhaseNo == 6: # finding V at Hmax for residual embedment iteration
+            from scipy.optimize import minimize_scalar
+            def H(V):
+                H = Hmax*(beta*((V/Vmax)**beta1)*((1-V/Vmax)**beta2))
+                return H
+
+            result = minimize_scalar(lambda V: -H(V), bounds=(0, Vmax), method='bounded')
+            V_at_Hmax = result.x
+            Hmax_found = H(V_at_Hmax)
+            if abs(Hmax_found - Hmax) > 0.001:
+                print("V at Hmax was not found correctly, please check calculation")
+
     ###########################################################################
     # DNVGL-RP-F114 Drained Model 1, Section 4.4.2.3, adjusted to use tan(delta) directly, i.e. interface friction, rather than r*tan(phi)
     elif Lat_brk_model == 10:
@@ -131,10 +143,14 @@ def latbrk(Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_ve
     yHE_lat_brk = (0.1 + 0.7*z/D)*D
     y_lat_brk = [yLE_lat_brk, yBE_lat_brk, yHE_lat_brk]
 
-    return [ff_lat_brk, y_lat_brk]
+    if PhaseNo == 6 and Lat_brk_model == 2: # residual embedment using generalise envelope method
+        return ff_lat_brk, V_at_Hmax
+
+    else:
+        return [ff_lat_brk, y_lat_brk]
 
 
-def latres(Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, delta, z_hydro, z_res, B_res):
+def latres(PhaseNo, Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, delta, z_hydro, z_res, B_res):
     """This function calculates the lateral residual friction factors 
     (i.e. after breakout) using the chosen method with embedment and 
     strength from previous calculation stages."""
@@ -143,18 +159,18 @@ def latres(Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_ve
     # DNVGL-RP-F114 Undrained Lateral Breakout Model 1, Section 4.4.2.2 with embedment reduced to post-breakout depth; this is the same approach used by DNV for drained residual relative to drained lateral breakout and no non-empirical UD formulation is presented. Adjustments to lat brk formulation as above.
     if Lat_res_model == 0:
         # See notes for DNV UD lat brk Model 1 above in latbrk function, same calculation so passing to that function with relevant inputs for the residual scenario, i.e. residual z and B, both strength increase profiles are the insitu as material either side of pipe has not been disturbed during laying as assumed for latbrk
-        [ff_lat_res, _] = latbrk(0, Lat_res_suction, D, W, [], int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, [], [], gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
+        [ff_lat_res, _] = latbrk(PhaseNo, 0, Lat_res_suction, D, W, [], int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, [], [], gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
 
     ###########################################################################
     # Generalised FE H-V Capacity Envelopes after Merifield et al 2008 approach, Vmax and Hmax formulation from Merifield et al 2009, formulations extended by WSP. Adjustments to lat brk formulation as above.
-    if Lat_res_model == 2:
-        [ff_lat_res, _] = latbrk(2, [], D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
+    elif Lat_res_model == 2:
+        [ff_lat_res, _] = latbrk(PhaseNo, 2, [], D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
 
     ###########################################################################
     # DNVGL-RP-F114 Drained Lateral Breakout Model 1, Section 4.4.2.3 with embedment reduced to post-breakout depth. Adjustments to lat brk formulation as above.
     elif Lat_res_model == 10:
         # See notes for DNV D lat brk Model 1 above in latbrk function, same calculation so passing to that function with relevant inputs for the residual scenario, i.e. residual z and B, both strength increase profiles are the insitu as material either side of pipe has not been disturbed during laying as assumed for latbrk
-        [ff_lat_res, _] = latbrk(10, [], D, W, [], [], [], [], [], [], [], [], gamma_sub, [], [], [], [], delta, z_res, [])
+        [ff_lat_res, _] = latbrk(PhaseNo, 10, [], D, W, [], [], [], [], [], [], [], [], gamma_sub, [], [], [], [], delta, z_res, [])
 
     ###########################################################################
     # No valid lateral residual model selected
