@@ -23,6 +23,19 @@ if file_name: # Only save if user selected a file name
 else:
     print("Results file not selected")
 
+###########################################################################
+# Select location to save figures from the new run
+from pathlib import Path
+parent_dir = Path(Common.select_folder())
+
+if parent_dir.name.lower() == "results":
+    results_path = parent_dir
+else:
+    results_path = parent_dir / 'Results'
+    if not results_path.exists():
+        results_path.mkdir()
+
+###########################################################################
 # Converting to lists of each variable to be easier to plot outputs
 list_inputs = {}
 list_results = {}
@@ -58,5 +71,5 @@ for key, value in list(list_results.items()):
 
 ###########################################################################
 # Plotting results and fitting distributions to them
-to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk', 'ff_lat_res', 'ff_ax']
-Common.process_results(list_results, results[0]['inputs']['Output_dist'], to_fit_and_plot)
+to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
+Common.process_results(list_results, results[0]['inputs']['Output_dist'], to_fit_and_plot, results_path)

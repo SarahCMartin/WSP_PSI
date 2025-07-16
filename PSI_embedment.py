@@ -317,6 +317,7 @@ def embedment_with_horz_force(PhaseNo, z0, D, calc_depths, su_inc, lat_su_inc, g
         if V_track[-1] > W: # Max lateral resistance exceeds lateral resistance with V = W, i.e. this vertical force gives a point before the Hmax peak in the envelope
             if len(V_track) == 1: # first iteration, this suggest less residual embedment that using simple BC formula, exit and take that value as this suggests a disagreement between the methods at this low value
                 z = z0
+                print(f"Residual embedment from DNV Method 1 (bearing capacity) as generalised envelope method did not give larger value to sustain horizontal force: zres = {z} m")
                 break
             elif V_track[-2] < W: # previous estimate was too much embedment but the one before that was too little, taking mid-point for next iteration
                 z = (z_track[-1] + z_track[-2])/2
