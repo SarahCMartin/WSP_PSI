@@ -356,7 +356,7 @@ def fit_distribution_cdf(data, dist_name, return_error=False):
         return opt_params # returns optimised parameters only
 
 
-def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name='', results_path=None):
+def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name='', results_path=None, type='input'):
     """Plots the fitted distribution's CDF and PDF along with input percentiles, inputs:
         x_percentiles (list or np.array): The x-values at given percentiles (e.g., [LE, BE, HE]).
         percentiles (list or np.array): Percentiles corresponding to x_percentiles (e.g., [0.05, 0.5, 0.95]).
@@ -424,8 +424,12 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
         
         # Adding input percentiles for input fitting, not relevant for results fitting
         if x is not None and len(x) > 0:
-            ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
-            ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
+            if type == 'input':
+                ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
+                ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
+            elif type == 'output':
+                ax[0].scatter(x, probs, color='blue', label='Output Percentiles')
+                ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Output Percentiles')
 
         # Defining PDF axis label here as it is different for the degenerative case vs others
         ax[1].set_ylabel("Density")

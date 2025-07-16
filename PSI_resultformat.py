@@ -155,20 +155,35 @@ def hard_coded_headings(fig, ax, param_name):
         ax[0].set_xlabel(r"Residual Embedment, $z_{res}$ (m)")
         ax[1].set_xlabel(r"Residual Embedment, $z_{res}$ (m)")
 
-    elif param_name == 'ff_lat_brk':
-        fig.suptitle("Lateral Breakout Friction Factor - Results", fontsize=14)
-        ax[0].set_xlabel(r"Lateral Breakout FF, $\mu_{{lat,brk}}$ (-)")
-        ax[1].set_xlabel(r"Lateral Breakout FF, $\mu_{{lat,brk}}$ (-)")
+    elif param_name == 'ff_lat_brk_UD':
+        fig.suptitle("Lateral Breakout Friction Factor - Undrained Results", fontsize=14)
+        ax[0].set_xlabel(r"Lateral Breakout FF, $\mu_{{lat,brk,UD}}$ (-)")
+        ax[1].set_xlabel(r"Lateral Breakout FF, $\mu_{{lat,brk,UD}}$ (-)")
+    
+    elif param_name == 'ff_lat_brk_D':
+        fig.suptitle("Lateral Breakout Friction Factor - Drained Results", fontsize=14)
+        ax[0].set_xlabel(r"Lateral Breakout FF, $\mu_{{lat,brk,D}}$ (-)")
+        ax[1].set_xlabel(r"Lateral Breakout FF, $\mu_{{lat,brk,D}}$ (-)")
 
-    elif param_name == 'ff_lat_res':
-        fig.suptitle("Lateral Residual Friction Factor - Results", fontsize=14)
-        ax[0].set_xlabel(r"Lateral Residual FF, $\mu_{{lat,res}}$ (-)")
-        ax[1].set_xlabel(r"Lateral Residual FF, $\mu_{{lat,res}}$ (-)")
+    elif param_name == 'ff_lat_res_UD':
+        fig.suptitle("Lateral Residual Friction Factor - Undrained Results", fontsize=14)
+        ax[0].set_xlabel(r"Lateral Residual FF, $\mu_{{lat,res,UD}}$ (-)")
+        ax[1].set_xlabel(r"Lateral Residual FF, $\mu_{{lat,res,UD}}$ (-)")
 
-    elif param_name == 'ff_ax':
-        fig.suptitle("Axial Friction Factor - Results", fontsize=14)
-        ax[0].set_xlabel(r"Axial FF, $\mu_{{ax}}$ (-)")
-        ax[1].set_xlabel(r"Axial FF, $\mu_{{ax}}$ (-)")
+    elif param_name == 'ff_lat_res_D':
+        fig.suptitle("Lateral Residual Friction Factor - Drained Results", fontsize=14)
+        ax[0].set_xlabel(r"Lateral Residual FF, $\mu_{{lat,res,D}}$ (-)")
+        ax[1].set_xlabel(r"Lateral Residual FF, $\mu_{{lat,res,D}}$ (-)")
+
+    elif param_name == 'ff_ax_UD':
+        fig.suptitle("Axial Friction Factor - Undrained Results", fontsize=14)
+        ax[0].set_xlabel(r"Axial FF, $\mu_{{ax,UD}}$ (-)")
+        ax[1].set_xlabel(r"Axial FF, $\mu_{{ax,UD}}$ (-)")
+
+    elif param_name == 'ff_ax_D':
+        fig.suptitle("Axial Friction Factor - Drained Results", fontsize=14)
+        ax[0].set_xlabel(r"Axial FF, $\mu_{{ax,D}}$ (-)")
+        ax[1].set_xlabel(r"Axial FF, $\mu_{{ax,D}}$ (-)")
 
     # Adjust layout to give space for the subtitle
     fig.tight_layout(rect=[0, 0, 1, 0.95])
@@ -357,12 +372,18 @@ def hard_coded_caption(param_name):
         param_string = r"Hydrotest Embedment, $z_{hydro}$"
     elif param_name == 'z_res':
         param_string = r"Residual Embedment, $z_{res}$"
-    elif param_name == 'ff_lat_brk':
-        param_string = r"Lateral Breakout FF, $\mu_{{lat,brk}}$"
-    elif param_name == 'ff_lat_res':
-        param_string = r"Lateral Residual FF, $\mu_{{lat,res}}$"
-    elif param_name == 'ff_ax':
-        param_string = r"Axial FF, $\mu_{{ax}}$"
+    elif param_name == 'ff_lat_brk_UD':
+        param_string = r"UD Lateral Breakout FF, $\mu_{{lat,brk,UD}}$"
+    elif param_name == 'ff_lat_brk_D':
+        param_string = r"D Lateral Breakout FF, $\mu_{{lat,brk,D}}$"
+    elif param_name == 'ff_lat_res_UD':
+        param_string = r"UD Lateral Residual FF, $\mu_{{lat,res,UD}}$"
+    elif param_name == 'ff_lat_res_D':
+        param_string = r"D Lateral Residual FF, $\mu_{{lat,res,D}}$"
+    elif param_name == 'ff_ax_UD':
+        param_string = r"UD Axial FF, $\mu_{{ax,UD}}$"
+    elif param_name == 'ff_ax_D':
+        param_string = r"D Axial FF, $\mu_{{ax,D}}$"
 
     else:
         return # if name doesn't match those with a hard coded option then exit the function

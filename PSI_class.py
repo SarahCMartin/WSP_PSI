@@ -118,7 +118,7 @@ class PSI:
         
         self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp)
         
-        print("UD Lateral Breakout FF:", self.ff_lat_brk_UD, "D Lateral Breakout FF:", self.ff_lat_brk_D, "Lateral Breakout Mobilisation Displacements:", self.y_lat_brk)
+        #print("UD Lateral Breakout FF:", self.ff_lat_brk_UD, "D Lateral Breakout FF:", self.ff_lat_brk_D, "Lateral Breakout Mobilisation Displacements:", self.y_lat_brk)
 
         ###########################################################################
         # Lateral Residual Resistance
@@ -156,7 +156,7 @@ class PSI:
         
         self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp)
 
-        print("UD Lateral Residual FF:", self.ff_lat_res_UD, "D Lateral Residual FF:", self.ff_lat_res_D, "Lateral Residual Mobilisation Displacements:", self.y_lat_res)
+        #print("UD Lateral Residual FF:", self.ff_lat_res_UD, "D Lateral Residual FF:", self.ff_lat_res_D, "Lateral Residual Mobilisation Displacements:", self.y_lat_res)
 
         ###########################################################################
         # Axial Resistance
@@ -167,7 +167,7 @@ class PSI:
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
                 [self.ff_ax_D, self.x_ax] = PSI_frictionfcts.axial(model, self.D, self.W_op, [], [], [], [], [], self.delta, self.z_hydro, B_hydro)
             
-        print("UD Axial FF:", self.ff_ax_UD, "D Axial FF:", self.ff_ax_D, "Axial Mobilisation Displacements:", self.x_ax)
+        #print("UD Axial FF:", self.ff_ax_UD, "D Axial FF:", self.ff_ax_D, "Axial Mobilisation Displacements:", self.x_ax)
 
         ###########################################################################
         # Lateral Cyclic Resistance 
