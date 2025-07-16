@@ -13,7 +13,7 @@ os.chdir(directory) # finding folder where this script is saved and setting as t
 d = {} # empty dictionary to take input parameters to add to PSI_case object in the initiation step
 
 ###########################################################################
-# Import inputs from excel file 'PSI_Inputs.xlsx'
+# Import inputs from excel file 'PSI_Inputs.xlsx' and select location to save results
 import Common
 (input_data, input_data_str, file_path) = Common.import_excel('Inputs')
 

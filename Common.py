@@ -113,7 +113,7 @@ def import_json():
     root = Tk()
     root.withdraw
 
-    # Opening the file dialog to select and excel input file
+    # Opening the file dialog to select and json input file
     file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")], title="Select input file")
 
     return file_path

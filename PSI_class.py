@@ -34,17 +34,17 @@ class PSI:
         # As-laid Embedment
         import PSI_soils
         PhaseNo = 1
-        [insitu_calc_depths, insitu_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, 1, [], [], [])
-        [_, emb_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, [], [], [])
+        [insitu_calc_depths, insitu_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, 1, [], [], [])
+        [_, emb_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, [], [], [])
 
         import PSI_embedment
-        [self.z_aslaid, B_aslaid] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_empty, self.alpha, self.EI, self.T0, self.z_ini, self.gamma_sub, insitu_calc_depths, emb_su_inc, self.phi)
+        [self.z_aslaid, B_aslaid] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_empty, self.alpha, self.EI, self.T0, self.z_ini, self.gamma_sub, insitu_calc_depths, emb_su_inc, [], self.phi)
         #print("As-laid Embedment:", self.z_aslaid)
         
         ###########################################################################
         # Consolidation Between Pipelay and Hydrotest
         PhaseNo = 2
-        [postlay_calc_depths, postlay_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, self.z_aslaid, [], [])
+        [postlay_calc_depths, postlay_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, self.z_aslaid, [], [])
         # print(postlay_calc_depths, postlay_su_inc)
 
         if self.Emb_aslaid_model >= 10 and self.Emb_hydro_model >= 10 and all(model>=10 for model in self.Lat_brk_model) and all(model>=10 for model in self.Lat_res_model) and all(model>=10 for model in self.Ax_model): # soil always modelled as drained
@@ -60,14 +60,14 @@ class PSI:
         ###########################################################################
         # Hydrotest Embedment
         PhaseNo = 3
-        [self.z_hydro, B_hydro] = PSI_embedment.embedment(PhaseNo, self.Emb_hydro_model, self.D, self.W_hydro, self.alpha, [], [], self.z_aslaid, self.gamma_sub, postlay_calc_depths, su_consol_postlay, self.phi)
+        [self.z_hydro, B_hydro] = PSI_embedment.embedment(PhaseNo, self.Emb_hydro_model, self.D, self.W_hydro, self.alpha, [], [], self.z_aslaid, self.gamma_sub, postlay_calc_depths, su_consol_postlay, [], self.phi)
         #print("Hydrotest Embedment:", self.z_hydro)
 
         ###########################################################################
         # Consolidation During Hydrotest and Until Operation (incl. time flooded and empty)
         PhaseNo = 4
-        [hydro_calc_depths, hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, su_consol_postlay)
-        [_,int_hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, int_su_consol_postlay)
+        [hydro_calc_depths, hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, su_consol_postlay)
+        [_,int_hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, int_su_consol_postlay)
         # print(hydro_calc_depths, hydro_su_inc, int_hydro_su_inc)
 
         # Hydrotest
@@ -105,16 +105,16 @@ class PSI:
         ###########################################################################
         # Lateral Breakout Resistance
         PhaseNo = 5
-        [_, lat_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.lateral_St, [], [], [])
+        [_, lat_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.lateral_St, [], [], [])
         # print(lat_su_inc)
 
         import PSI_frictionfcts
         ff_lat_brk_UD_temp = {}
         for model in self.Lat_brk_model:
             if model < 10: # Undrained
-                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_hydro, B_hydro)
+                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_hydro, B_hydro)
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_hydro, B_hydro)
+                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_hydro, B_hydro)
         
         self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp)
         
@@ -124,10 +124,10 @@ class PSI:
         # Lateral Residual Resistance
         PhaseNo = 6
         if 0 in self.Lat_res_model or 2 in self.Lat_res_model or 10 in self.Lat_res_model: # methods which require instantaneous embedment into undisturbed soil profile to be calculated
-            [self.z_res, B_res] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_op, self.alpha, [], [], self.z_ini, self.gamma_sub, insitu_calc_depths, insitu_su_inc, self.phi)
+            [self.z_res, B_res] = PSI_embedment.embedment(PhaseNo, self.Emb_res_model, self.D, self.W_op, self.alpha, [], [], self.z_ini, self.gamma_sub, insitu_calc_depths, insitu_su_inc, lat_su_inc, self.phi)
             #print(self.z_res, B_res)
 
-            [res_calc_depths, res_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_res, insitu_calc_depths, insitu_su_inc)
+            [res_calc_depths, res_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_res, insitu_calc_depths, insitu_su_inc)
             # print(res_calc_depths, res_su_inc)
 
         else: # Lat_res_model 1 or 11 (SAFEBUCK empirical relationships) use pre-breakout embedment z_hydro
@@ -147,12 +147,12 @@ class PSI:
                     # print(int_yield_stress_res, int_vert_eff_res)
 
                     # Max previous for subsequent SHANSEP calc will come from int_yield_stress_res[0] as strength will be defined by the past load history rather than loading phases applied during installation, hydrotest, etc.
-                    [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_res, B_res)
-                else:
-                    [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(model, [], self.D, self.W_op, self.alpha, [], [], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, [], [], [], self.z_hydro, self.z_res, B_res)
+                    [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_res, B_res)
+                else: 
+                    [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, self.alpha, [], [], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, [], [], [], self.z_hydro, self.z_res, B_res)
         
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, [], self.z_res, [])
+                [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, [], self.z_res, [])
         
         self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp)
 
@@ -186,15 +186,22 @@ class PSI:
     
 
 def apply_weighting(weighting_range, dict):
+    import numpy as np
     weighting = sum(weighting_range)/len(weighting_range) # initially taking the average but will change to take a varying value depending where the embedment falls relative to reliability of the method
     weighted_sum = 0
     total_weighting = 0 # should add up to 100, but allowing it to be different if someone selected 3 UD models, for example
     for model in dict:
         if model == 2: # Generalised FE Envelope Method
-            weighted_sum = weighted_sum + dict[2]*weighting/100
-            total_weighting = total_weighting + weighting/100
-        else: # Other Undrained Methods, i.e. DNV
-            weighted_sum = weighted_sum + dict[0]*(1-weighting/100)
-            total_weighting = total_weighting + (1-weighting/100)
+            if isinstance(dict[2], float) and not np.isnan(dict[2]):
+                weighted_sum = weighted_sum + dict[2]*weighting/100
+                total_weighting = total_weighting + weighting/100
+        elif model == 0: # DNV non-empirical
+            if isinstance(dict[0], float) and not np.isnan(dict[0]):
+                weighted_sum = weighted_sum + dict[0]*(1-weighting/100)
+                total_weighting = total_weighting + (1-weighting/100)
+        else: # SAFEBUCK, unlikely to be used but included here in case this or another model is ultimately included as model 1
+            if isinstance(dict[1], float) and not np.isnan(dict[1]):
+                weighted_sum = weighted_sum + dict[1]*(1-weighting/100)
+                total_weighting = total_weighting + (1-weighting/100)
 
     return weighted_sum/total_weighting

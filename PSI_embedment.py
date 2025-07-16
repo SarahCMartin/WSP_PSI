@@ -3,7 +3,7 @@ import numpy as np
 from scipy.optimize import fsolve
 import Common
 
-def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_depths, su_inc, phi):
+def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_depths, su_inc, lat_su_inc, phi):
     """This function iterates to find the pipe embedment based on supplied
     input variables. It is applicable for as-laid or hydrotest embedment with
     variations to account for these differences switched using PhaseNo."""
@@ -20,8 +20,8 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
         su0 = Common.linear_extrapolate(z_su0, calc_depths, su_inc) # allowing extrapolation for phases where strength profile starts from pipe invert, but the reference depth will be above this point
         su_z = np.interp(z_ini, calc_depths, su_inc)
 
-        # DNVGL-RP-F114 Undrained Model 1, Section 4.2.3.2
-        if Emb_model == 0:
+        # DNVGL-RP-F114 Undrained Model 1, Section 4.2.3.2 or generalised bearing capacity envelope method which uses this as the minimum residual embedment
+        if Emb_model == 0 or Emb_model == 2:
             # Bearing capacity incl. depth and bouyancy effects, Qv (kN/m)
             (_, _, Qv) = bearing_capacity_0(su_z, su_mudline, su0, z_ini, z_su0, alpha, B, D, gamma_sub, Abm) # passing back additional variables for later warning messages
 
@@ -99,7 +99,7 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
             su_z = np.interp(z, calc_depths, su_inc)
 
             # DNVGL-RP-F114 Undrained Model 1, Section 4.2.3.2
-            if Emb_model == 0:
+            if Emb_model == 0 or Emb_model == 2:
                 # Bearing capacity incl. depth and bouyancy effects, Qv (kN/m)
                 (str_grad_var, delta_su, Qv) = bearing_capacity_0(su_z, su_mudline, su0, z, z_su0, alpha, B, D, gamma_sub, Abm)
 
@@ -130,6 +130,18 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
     #if Emb_model == 1 and z > D/2: # DNVGL-RP-F114 Section 4.2.3.3 notes undrained model 2 may underpredict embedments where z > D/2
         #print("Undrained embedments z > D/2 may be underpredicted using DNVGL-RP-F114 Model 2/SAFEBUCK, please confirm with a different model.")
     
+    ###########################################################################
+    # Additional calculation if generalised capacity envelope method selected (only avialable for residual and preferred method for this calculation to account for deeper embedment 
+    # to sustain horizontal force and not only vertical equilibrium); DNV BC method gives the minimum embedment as the starting point for this iteration and as a check afterwards
+    if PhaseNo == 6:
+        if Emb_model == 2:
+            zres = embedment_with_horz_force(PhaseNo, z, D, calc_depths, su_inc, lat_su_inc, gamma_sub, W, alpha)
+            if zres > z: # Replacing BC embedment result if this has successfully calulated a deeper embedment
+                z = zres
+                (B, Abm) = emb_geometry(z, D)
+            if zres < z: # Error if the embedment is less, as a deeper embedment is required to sustain horizontal load at the same time as vertical weight, but may remove this if it is occurring frequently and with a minor magnitude due to differences in the methods, ok for them to be equal
+                print("Residual embedment from generalised envelope method is less than bearing capacity method, this calculation should be checked")
+
     return z, B
 
 
@@ -287,3 +299,54 @@ def lay_factor(T0, EI, W, z):
     else:
         # If multiple valid roots, return the smallest (or choose per your preference)
         return min(real_roots)
+
+
+def embedment_with_horz_force(PhaseNo, z0, D, calc_depths, su_inc, lat_su_inc, gamma_sub, W, alpha):
+    import PSI_frictionfcts
+    z_track = [z0] # taking undistrubed BC value as starting embedment unless it is very small, and therefore likely to cause errors by the envelope being negligibly small
+    # Taking horizontal strength profile as disturbed by St (not St_pipelay) and vertical as undistrubed, though it may in part be depending on the motion of the pipe during breakout
+    ff, V_at_Hmax = PSI_frictionfcts.latbrk(PhaseNo, 2, [], D, W, alpha, [], [], calc_depths, [], lat_su_inc, calc_depths, su_inc, gamma_sub, [], [], [], [], [], z0, [])
+    V_track = [V_at_Hmax]
+
+    if abs(V_at_Hmax - W) < 0.001: # prevents error if initial guess for z gives result within target tolerance
+        z = z0
+
+    while abs(V_track[-1] - W) > 0.001:
+        ###########################################################################
+        # Select value of embedment, z (m), for next iteration depending on the relative values of Lateral resistance and Max Lateral resistance for the envelope associated with that depth
+        if V_track[-1] > W: # Max lateral resistance exceeds lateral resistance with V = W, i.e. this vertical force gives a point before the Hmax peak in the envelope
+            if len(V_track) == 1: # first iteration, this suggest less residual embedment that using simple BC formula, exit and take that value as this suggests a disagreement between the methods at this low value
+                z = z0
+                break
+            elif V_track[-2] < W: # previous estimate was too much embedment but the one before that was too little, taking mid-point for next iteration
+                z = (z_track[-1] + z_track[-2])/2
+            elif V_track[-2] > W: # previous two estimates were too much embedment but somewhere before that was too little, taking mid-point of latest and previous where Hmax < F for next iteration
+                if V_track[-1] == V_track[-2]: # preventing infinite loop if the number of decimal places allowed by python in the calculation is preventing the error getting below defined value (error is probably too small in this case, but ultimately a better algorithm can be implemented when optimisation is a prority)
+                    z = z_track[-1]
+                    break
+                else:
+                    z = (z_track[-1] + z_track[next(x for x in range(len(z_track)-1,-1,-1) if V_track[x] < W)])/2
+
+        else: # Greater embedment needed to sustain weight and horizontal force, i.e. this vertical force gives a point after the Hmax peak in the envelope
+            if len(V_track) == 1: # first iteration, taking 3D embedment to check if results are within viable range before further iterations
+                z = 3*D # 4D for as-laid embedment but residual should be less so using 3D instead
+            elif len(V_track) == 2 and V_track[0] < W: # second iteration; requires more embedment that both initial guess and 3D, exit calculation but set to 3D so it doesn't cause error
+                #print("Embedment > 3D, please check inputs. z = 3D used for subsequent calculations of this dice roll.")
+                z = 3*D
+                break
+            elif V_track[-2] > W: # previous estimate was too little embedment but the one before that was too much, taking mid-point for next iteration
+                z = (z_track[-1] + z_track[-2])/2
+            elif V_track[-2] < W: # previous two estimates were too little embedment but somewhere before that was too much, taking mid-point of latest and previous where Hmax > F for next iteration
+                if V_track[-1] == V_track[-2]: # preventing infinite loop if the number of decimal places allowed by python in the calculation is preventing the error getting below defined value (error is probably too small in this case, but ultimately a better algorithm can be implemented when optimisation is a prority)
+                    z = z_track[-1]
+                    break
+                else:
+                    z = (z_track[-1] + z_track[next(x for x in range(len(z_track)-1,-1,-1) if V_track[x] > W)])/2
+        
+        ###########################################################################
+        # Calculate F and Hmax corresponding to new value of embedment, z (m)
+        ff, V_at_Hmax = PSI_frictionfcts.latbrk(PhaseNo, 2, [], D, W, alpha, [], [], calc_depths, [], lat_su_inc, calc_depths, su_inc, gamma_sub, [], [], [], [], [], z, [])
+        V_track += [V_at_Hmax]
+        z_track += [z]
+
+    return z

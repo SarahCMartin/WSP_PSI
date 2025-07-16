@@ -1,7 +1,7 @@
 import Common
 import numpy as np
 
-def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_model, Ax_model, PhaseNo, D, su_profile, su_mudline, su_inv, z_su_inv, delta_su, St, z, prev_calc_depths, prev_su_inc):
+def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_model, Emb_res_model, Ax_model, PhaseNo, D, su_profile, su_mudline, su_inv, z_su_inv, delta_su, St, z, prev_calc_depths, prev_su_inc):
     """This function turns the input linear or bi-linear strength profile into
     incremental profile with corresponding depths and applies sensitivity to 
     reflect remoulding profiles as relevant."""
@@ -16,7 +16,7 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
 
     ###########################################################################
     # Setting strength profile output as empty if all phases are modelled as drained
-    if Emb_aslaid_model >= 10 and Emb_hydro_model >= 10 and Lat_brk_model >= 10 and Lat_res_model >= 10 and Ax_model >= 10: # soil always modelled as drained
+    if Emb_aslaid_model >= 10 and Emb_hydro_model >= 10 and Lat_brk_model >= 10 and Lat_res_model >= 10 and Emb_res_model >= 10 and Ax_model >= 10: # soil always modelled as drained
         su_inc = []
 
     ###########################################################################
