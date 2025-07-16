@@ -21,7 +21,7 @@ if file_name: # Only save if user selected a file name
     with open(file_name, 'r') as file:
         results = json.load(file)
 else:
-    print("Results file not saved")
+    print("Results file not selected")
 
 # Converting to lists of each variable to be easier to plot outputs
 list_inputs = {}
