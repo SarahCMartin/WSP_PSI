@@ -114,6 +114,7 @@ else:
 ###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk', 'ff_lat_res', 'ff_ax']
-Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, results_path)
+Output_dist = compiled[0]['inputs']['Output_dist']
+Common.process_results(list_results, Output_dist, to_fit_and_plot, results_path)
 
 os.chdir(parent_dir)
