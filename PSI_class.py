@@ -116,7 +116,7 @@ class PSI:
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
                 [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_hydro, B_hydro)
         
-        self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp)
+        self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_hydro, self.D)
         
         #print("UD Lateral Breakout FF:", self.ff_lat_brk_UD, "D Lateral Breakout FF:", self.ff_lat_brk_D, "Lateral Breakout Mobilisation Displacements:", self.y_lat_brk)
 
@@ -154,7 +154,7 @@ class PSI:
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
                 [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, [], self.z_res, [])
         
-        self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp)
+        self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp, self.z_res, self.D)
 
         #print("UD Lateral Residual FF:", self.ff_lat_res_UD, "D Lateral Residual FF:", self.ff_lat_res_D, "Lateral Residual Mobilisation Displacements:", self.y_lat_res)
 
@@ -185,23 +185,36 @@ class PSI:
         return self
     
 
-def apply_weighting(weighting_range, dict):
+def apply_weighting(weighting_range, dict, z, D):
     import numpy as np
-    weighting = sum(weighting_range)/len(weighting_range) # initially taking the average but will change to take a varying value depending where the embedment falls relative to reliability of the method
+    # DNV Model 1 (non-empirical) is more reliable at low embedment than Generalised FE Envelope Method, so varying from max weighting for this at z=0 to min at z=0.5D
+    # DNV Model 2 / SAFEBUCK (empirical) is unreliable above z=0.5D, so varying from max weighting for this at z=0 to 0 at z=0.5D 
+    zmin = 0
+    zmax = 0.5*D
+    if z <= zmin:
+        weighting = weighting_range[0]/100
+        weighting_SFBK = 1-weighting_range[0]/100
+    elif z >= zmax:
+        weighting = weighting_range[1]/100
+        weighting_SFBK = 0
+    else:
+        weighting = np.interp(z, [zmin, zmax], [x/100 for x in weighting_range])
+        weighting_SFBK = np.interp(z, [zmin, zmax], [1-weighting_range[0]/100, 0])
+
     weighted_sum = 0
-    total_weighting = 0 # should add up to 100, but allowing it to be different if someone selected 3 UD models, for example
+    total_weighting = 0 # should add up to 1, but allowing it to be different if someone selected 3 UD models, for example
     for model in dict:
         if model == 2: # Generalised FE Envelope Method
             if isinstance(dict[2], float) and not np.isnan(dict[2]):
-                weighted_sum = weighted_sum + dict[2]*weighting/100
-                total_weighting = total_weighting + weighting/100
+                weighted_sum = weighted_sum + dict[2]*weighting
+                total_weighting = total_weighting + weighting
         elif model == 0: # DNV non-empirical
             if isinstance(dict[0], float) and not np.isnan(dict[0]):
-                weighted_sum = weighted_sum + dict[0]*(1-weighting/100)
-                total_weighting = total_weighting + (1-weighting/100)
+                weighted_sum = weighted_sum + dict[0]*(1-weighting)
+                total_weighting = total_weighting + (1-weighting)
         else: # SAFEBUCK, unlikely to be used but included here in case this or another model is ultimately included as model 1
             if isinstance(dict[1], float) and not np.isnan(dict[1]):
-                weighted_sum = weighted_sum + dict[1]*(1-weighting/100)
-                total_weighting = total_weighting + (1-weighting/100)
+                weighted_sum = weighted_sum + dict[1]*weighting_SFBK
+                total_weighting = total_weighting + weighting_SFBK
 
     return weighted_sum/total_weighting
