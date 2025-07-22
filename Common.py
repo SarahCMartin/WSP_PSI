@@ -263,10 +263,9 @@ def generate_rolls(d, No_rolls, results_path=None):
     return rolls, fit_info
 
 
-def process_results(results, dist_str, chosen, output_folder=None):
+def process_results(results, dist_str, chosen, output_folder=None, Model_fct=1):
     import numpy as np
     import Distributions
-    from scipy.stats import uniform, truncnorm, lognorm, weibull_min, weibull_max, gamma, rayleigh
 
     # dist = Distributions.dist_map(dist_str)
     output_fit_params = {}
@@ -286,7 +285,16 @@ def process_results(results, dist_str, chosen, output_folder=None):
 
             if np.isnan(x_percentiles).any():
                 print(f"No or insufficient information to fit distribtuion for {name}")
+
             else:
+                if Model_fct != 1: # If model factor is 1, no change to the results therefore no step here
+                    BE = x_percentiles[1]
+                    new_info = (info - BE)*Model_fct + BE
+                    info = new_info
+                    output_fit_params[name] = Distributions.fit_distribution_cdf(info, dist_str) # updating curve fit - don't refit best type if automated fit option, apply the one already selected
+                    x_percentiles = dist.ppf(percentiles, *output_fit_params[name]) # updating values of 5%, 50% (should be unchanged) and 95% for plotting
+
                 Distributions.plot_distribution_fit(x_percentiles, percentiles, dist, output_fit_params[name], info, name, dist_str, output_folder, type='output')
                 print(f"{name} - LE: {x_percentiles[0]}, BE: {x_percentiles[1]}, HE: {x_percentiles[2]}")
 
+                return info

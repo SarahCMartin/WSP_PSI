@@ -31,7 +31,7 @@ start = time.time() # Start timing after selection of the excel file to accurate
 
 ###########################################################################
 # Read Monte Carlo and Model Selection Parameters from Excel input file
-var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Lat_cyc_model', 'su_profile', 'z_su_inv', 'Output_dist']
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Lat_cyc_model', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct']
 d = {name: Common.find_var_value(input_data, input_data_str, name) for name in var_names} # dictionary containing constant parameters
 
 # Handle special logic for z_su_inv
@@ -147,6 +147,6 @@ else:
 ###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
-Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, results_path)
+Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, results_path, d['Model_fct'])
 
 os.chdir(parent_dir)

@@ -72,4 +72,6 @@ for key, value in list(list_results.items()):
 ###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
-Common.process_results(list_results, results[0]['inputs']['Output_dist'], to_fit_and_plot, results_path)
+Output_dist = results[0]['inputs']['Output_dist']
+Model_fct = results[0]['inputs']['Model_fct']
+Common.process_results(list_results, Output_dist, to_fit_and_plot, results_path, Model_fct)
