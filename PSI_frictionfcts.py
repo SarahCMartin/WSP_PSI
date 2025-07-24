@@ -1,5 +1,6 @@
 import Common
 import numpy as np
+import math
 
 def latbrk(PhaseNo, Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, delta, z, B):
     """This function calculates the lateral breakout friction factors using 
@@ -378,4 +379,12 @@ def latcyc(Lat_cyc_model, No_cycles, D, W, z, calc_depths, su_inc, gamma_sub):
         z_cyc = z_track[No_cycles]
 
     return [ff_lat_cyc, ff_lat_berm, z_cyc]
-        
+
+
+def cyc_transition(N50, ff_UD, ff_D, No_cycles):
+    ff = []
+    for n in No_cycles:
+        drainage_index = 1 - math.exp(-0.7*(n-1)/N50)
+        ff += [drainage_index*(ff_D - ff_UD) + ff_UD]
+
+    return ff

@@ -31,7 +31,7 @@ start = time.time() # Start timing after selection of the excel file to accurate
 
 ###########################################################################
 # Read Monte Carlo and Model Selection Parameters from Excel input file
-var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Lat_cyc_model', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct']
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct']
 d = {name: Common.find_var_value(input_data, input_data_str, name) for name in var_names} # dictionary containing constant parameters
 
 # Handle special logic for z_su_inv
@@ -140,7 +140,7 @@ import json
 if file_name: # Only save if user selected a file name
     with open(file_name, "w") as f:
         json.dump(results, f, indent=4)
-    print(f"Dictionary saved to {file_name}")
+    print(f"Dictionary saved to {file_name}. Note: this saved data does not include model factors so that they can be varied as required in post-processing / re-processing.")
 else:
     print("Results dictionary not saved")
 

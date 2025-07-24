@@ -297,4 +297,4 @@ def process_results(results, dist_str, chosen, output_folder=None, Model_fct=1):
                 Distributions.plot_distribution_fit(x_percentiles, percentiles, dist, output_fit_params[name], info, name, dist_str, output_folder, type='output')
                 print(f"{name} - LE: {x_percentiles[0]}, BE: {x_percentiles[1]}, HE: {x_percentiles[2]}")
 
-                return info
+                

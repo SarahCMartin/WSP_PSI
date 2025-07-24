@@ -107,7 +107,7 @@ import json
 if file_name: # Only save if user selected a file name
     with open(file_name, "w") as f:
         json.dump(results, f, indent=4)
-    print(f"Dictionary saved to {file_name}")
+    print(f"Dictionary saved to {file_name}. Note: this saved data does not include model factors so that they can be varied as required in post-processing / re-processing.")
 else:
     print("Results dictionary not saved")
 
