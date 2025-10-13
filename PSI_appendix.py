@@ -17,14 +17,20 @@ files = os.listdir(folder_path)
 # Regex patterns
 cdf_pdf_pattern = re.compile(r'(.*)_([\w-]+)_CDF_and_PDF_(\d{8})_(\d{4})\.pdf')
 correlation_pattern = re.compile(r'(.+?)_to_(.+?)_Correlation_(\d{8})_(\d{4})\.pdf')
+cyclic_dist_pattern = re.compile(r'(.*?)(?:_n=(\d+))?_([\w-]+)_CDF_and_PDF_(\d{8})_(\d{4})\.pdf')
+cyclic_ev_pattern = re.compile(r'(.*)_Evolution_by_Cycle_(\d{8})_(\d{4})\.pdf')
 
 # Categorize files
 distribution_figures = {}
 correlation_figures = {}
+cyclic_dist_figures = {}
+cyclic_ev_figures = {}
 
 for f in files:
     cdf_pdf_match = cdf_pdf_pattern.match(f)
     corr_match = correlation_pattern.match(f)
+    cyc_dist_match = cyclic_dist_pattern.match(f)
+    cyc_ev_match = cyclic_ev_pattern.match(f)
 
     if cdf_pdf_match:
         var, dist, date, time = cdf_pdf_match.groups()
@@ -41,6 +47,22 @@ for f in files:
         timestamp = dt_obj.timestamp()
         if var1 not in correlation_figures or timestamp > correlation_figures[var1][1]:
             correlation_figures[var1] = (f, timestamp, var2)
+
+    elif cyc_dist_match:
+        var, N, dist, date, time = cyc_dist_match.groups()
+        dt_str = f"{date}{time}"
+        dt_obj = datetime.strptime(dt_str, "%Y%m%d%H%M")
+        timestamp = dt_obj.timestamp()
+        if var not in cyclic_dist_figures or timestamp > cyclic_dist_figures[var][1]:
+            cyclic_dist_figures[var] = (f, timestamp)
+
+    elif cyc_ev_match:
+        var, date, time = cdf_pdf_match.groups()
+        dt_str = f"{date}{time}"
+        dt_obj = datetime.strptime(dt_str, "%Y%m%d%H%M")
+        timestamp = dt_obj.timestamp()
+        if var not in cyclic_ev_figures or timestamp > cyclic_ev_figures[var][1]:
+            cyclic_ev_figures[var] = (f, timestamp)
 
 (input_data, input_data_str, file_path) = Common.import_excel('Inputs')
 column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Min', 'Distribution to Fit']
@@ -59,6 +81,12 @@ preferred_output_order = ['z_aslaid', 'z_hydro', 'ff_ax', 'ff_lat_brk', 'z_res',
 output_figures = {
     var: value for var, value in distribution_figures.items()
     if var in preferred_output_order
+}
+
+preferred_cyclic_order = ['ff_ax_cyc', 'ff_lat_berm', 'ff_lat_cyc']
+cyclic_figures = {
+    var: value for var, value in cyclic_dist_figures.items()
+    if var in preferred_cyclic_order
 }
 
 # Prepare LaTeX content
@@ -138,6 +166,30 @@ ordered_output = {
 }
 for var in ordered_output:
     fig_file = output_figures[var][0]
+    # p5, p50, p95 = output_percentiles[var]
+
+    # # Add table
+    # latex_content += f"\\subsection*{{{var}}}\n"
+    # latex_content += "\\begin{table}[h!]\n\\centering\n"
+    # latex_content += "\\begin{tabular}{|c|c|c|}\n\\hline\n"
+    # latex_content += "5\\% & 50\\% & 95\\% \\\\\n\\hline\n"
+    # latex_content += f"{p5} & {p50} & {p95} \\\\\n\\hline\n"
+    # latex_content += "\\end{tabular}\n\\end{table}\n"
+
+    # Add figure
+    var_for_caption = PSI_resultformat.hard_coded_caption(var)
+    latex_content += "\\begin{figure}[h!]\n\\centering\n"
+    latex_content += f"\\includegraphics[width=1\\textwidth]{{{fig_file}}}\n"
+    latex_content += f"\\caption{{CDF and PDF for {var_for_caption}}}\n\\end{{figure}}\n"
+
+# Section for Cyclic Outputs
+ordered_cyclic = {
+    key:cyclic_figures[key]
+    for key in preferred_cyclic_order
+    if key in cyclic_figures
+}
+for var in ordered_cyclic:
+    fig_file = cyclic_figures[var][0]
     # p5, p50, p95 = output_percentiles[var]
 
     # # Add table

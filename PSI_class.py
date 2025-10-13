@@ -1,6 +1,6 @@
 class PSI:
     """Represents a set of all input parameters and the associated output results from PSI analysis"""
-    def __init__(self, dictionary, z_aslaid=0, z_hydro=0, z_res=0, ff_lat_brk_D=0, ff_lat_brk_UD=0, y_lat_brk=[0,0,0], ff_lat_res_D=0, ff_lat_res_UD=0, y_lat_res=[0,0,0], ff_ax_D=0, ff_ax_UD=0, x_ax=[0,0,0], ff_lat_cyc=[0], ff_lat_berm=[0], ff_ax_cyc = [0], z_cyc=[0,0]):
+    def __init__(self, dictionary, z_aslaid=0, z_hydro=0, z_res=0, ff_lat_brk_D=0, ff_lat_brk_UD=0, y_lat_brk=[0,0,0], ff_lat_res_D=0, ff_lat_res_UD=0, y_lat_res=[0,0,0], ff_ax_D=0, ff_ax_UD=0, x_ax=[0,0,0], ff_lat_cyc=[], ff_lat_berm=[], ff_ax_cyc = [], z_cyc=[]):
         for k, v in dictionary.items():
             setattr(self, k, v)
         self.z_aslaid = z_aslaid
@@ -185,17 +185,17 @@ class PSI:
             z_cap = self.D
             B_cap = PSI_embedment.emb_geometry(z_cap, self.D)
             [lat_berm_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap)
-            [self.ff_lat_berm] = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_berm_cap, self.No_cycles)
+            self.ff_lat_berm = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_berm_cap, self.No_cycles)
 
             # Lateral Mid-Sweep
             # Capping lateral mid-sweep FF using drained lateral breakout at z = 0 embedment to remove passive component
             z_cap = 0
             B_cap = 0
             [lat_mid_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap)
-            [self.ff_lat_cyc] = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_berm_cap, self.No_cycles)
+            self.ff_lat_cyc = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_mid_cap, self.No_cycles)
 
             # Axial
-            [self.ff_ax_cyc] = PSI_frictionfcts.cyc_transition(self.N50, self.ff_ax_UD, self.ff_ax_D, self.No_cycles)
+            self.ff_ax_cyc = PSI_frictionfcts.cyc_transition(self.N50, self.ff_ax_UD, self.ff_ax_D, self.No_cycles)
 
         ###########################################################################
         # Producing figures of undrained shear strength evolution

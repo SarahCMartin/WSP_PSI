@@ -383,7 +383,8 @@ def latcyc(Lat_cyc_model, No_cycles, D, W, z, calc_depths, su_inc, gamma_sub):
 
 def cyc_transition(N50, ff_UD, ff_D, No_cycles):
     ff = []
-    for n in No_cycles:
+    Nmax = max(No_cycles)
+    for n in range(1, Nmax+1):
         drainage_index = 1 - math.exp(-0.7*(n-1)/N50)
         ff += [drainage_index*(ff_D - ff_UD) + ff_UD]
 

@@ -72,6 +72,20 @@ for key, value in list(list_results.items()):
 ###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
+
+cyclic_keys = ['ff_lat_berm', 'ff_lat_cyc', 'ff_ax_cyc']
+for key in cyclic_keys:
+    list_of_lists = list_results[key]
+    for n in d['No_cycles']:
+        new_key = f'{key}_n={n}' # Creating lists of results for selected cycles of interest named ff_lat_berm_n=10 for example
+        n_cycles_vals = [sublist[n-1] if len(sublist) > n-1 else None for sublist in list_of_lists]
+        list_results[new_key] = n_cycles_vals
+        to_fit_and_plot.append(new_key)
+
 Output_dist = results[0]['inputs']['Output_dist']
 Model_fct = results[0]['inputs']['Model_fct']
 Common.process_results(list_results, Output_dist, to_fit_and_plot, results_path, Model_fct)
+
+Common.process_per_cycle(list_results, cyclic_keys, results_path, Model_fct)
+
+os.chdir(parent_dir)

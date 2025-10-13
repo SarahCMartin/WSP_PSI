@@ -185,6 +185,30 @@ def hard_coded_headings(fig, ax, param_name):
         ax[0].set_xlabel(r"Axial FF, $\mu_{{ax,D}}$ (-)")
         ax[1].set_xlabel(r"Axial FF, $\mu_{{ax,D}}$ (-)")
 
+    elif param_name.startswith('ff_lat_berm_n='):
+        import re
+        match = re.match(r'(ff_lat_berm_n)=(\d+)', param_name)
+        value = match.group(2)
+        fig.suptitle(f"Lateral Cyclic Berm Friction Factor at Cycle N = {value}", fontsize=14)
+        ax[0].set_xlabel(fr"Lateral Cyclic Berm FF at N = {value}, $\mu_{{lat,cyc,berm,N={value}}}$ (-)")
+        ax[1].set_xlabel(fr"Lateral Cyclic Berm FF at N = {value}, $\mu_{{lat,cyc,berm,N={value}}}$ (-)")
+
+    elif param_name.startswith('ff_lat_cyc_n='):
+        import re
+        match = re.match(r'(ff_lat_cyc_n)=(\d+)', param_name)
+        value = match.group(2)
+        fig.suptitle(f"Lateral Cyclic Mid-Sweep Friction Factor at Cycle N = {value}", fontsize=14)
+        ax[0].set_xlabel(fr"Lateral Cyclic Mid-Sweep FF at N = {value}, $\mu_{{lat,cyc,mid,N={value}}}$ (-)")
+        ax[1].set_xlabel(fr"Lateral Cyclic Mid-Sweep FF at N = {value}, $\mu_{{lat,cyc,mid,N={value}}}$ (-)")
+
+    elif param_name.startswith('ff_ax_cyc_n='):
+        import re
+        match = re.match(r'(ff_ax_cyc_n)=(\d+)', param_name)
+        value = match.group(2)
+        fig.suptitle(f"Axial Cyclic Friction Factor at Cycle N = {value}", fontsize=14)
+        ax[0].set_xlabel(fr"Axial Cyclic FF at N = {value}, $\mu_{{ax,cyc,N={value}}}$ (-)")
+        ax[1].set_xlabel(fr"Axial Cyclic FF at N = {value}, $\mu_{{ax,cyc,N={value}}}$ (-)")
+
     # Adjust layout to give space for the subtitle
     fig.tight_layout(rect=[0, 0, 1, 0.95])
 
@@ -303,6 +327,23 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_ylabel(r"SHANSEP m for Soil-Interface, $m_{int}$ (-)")
     elif name_changing_var == 'delta':
         ax.set_ylabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
+
+
+def hard_coded_cyc_headings(ax, param_name):
+    if param_name == None:
+        return # if no name is provided this will make the plot the standard size and exit the function
+    
+    elif param_name == 'ff_lat_berm':
+        ax.set_title("Lateral Cyclic Berm Friction Factor - Evolution by Cycle", fontsize=14)
+        ax.set_ylabel(r"Lateral Cyclic Berm FF, $\mu_{{lat,cyc,berm}}$ (-)")
+
+    elif param_name == 'ff_lat_cyc':
+        ax.set_title("Lateral Cyclic Mid-sweep Friction Factor - Evolution by Cycle", fontsize=14)
+        ax.set_ylabel(r"Lateral Cyclic Mid-Sweep FF, $\mu_{{lat,cyc,mid}}$ (-)")
+
+    elif param_name == 'ff_ax_cyc':
+        ax.set_title("Axial Cyclic Friction Factor - Evolution by Cycle", fontsize=14)
+        ax.set_ylabel(r"Axial Cyclic FF, $\mu_{{ax,cyc}}$ (-)")
 
 
 def hard_coded_caption(param_name):    

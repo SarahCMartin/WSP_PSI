@@ -297,4 +297,82 @@ def process_results(results, dist_str, chosen, output_folder=None, Model_fct=1):
                 Distributions.plot_distribution_fit(x_percentiles, percentiles, dist, output_fit_params[name], info, name, dist_str, output_folder, type='output')
                 print(f"{name} - LE: {x_percentiles[0]}, BE: {x_percentiles[1]}, HE: {x_percentiles[2]}")
 
-                
+
+def process_per_cycle(results, chosen, output_folder=None, Model_fct=1):
+    import numpy as np
+    import Distributions
+
+    percentiles = [0.05, 0.5, 0.95]
+    for name, info in results.items():
+        if name in chosen:
+            # Rearranging to be lists of values by cycle number instead of by roll of random variables
+            No_rolls = len(results[name])
+            max_cyc = max(len(list_by_roll) for list_by_roll in results[name])
+            list_by_cycle = {i + 1: [] for i in range(max_cyc)}
+            for roll in results[name]:
+                for i, val in enumerate(roll):
+                    list_by_cycle[i + 1].append(val)
+
+            # For each cycle number fit a distribution to extract the LE, BE, HE for plotting
+            output_fit_params = {}
+            x_percentiles = {}
+            for n, values in list_by_cycle.items():
+                dist_str, output_fit_params[n] = Distributions.fit_best_distribution_cdf(values)
+                dist = Distributions.dist_map(dist_str)
+                x_percentiles[n] = dist.ppf(percentiles, *output_fit_params[n])
+
+                if np.isnan(x_percentiles[n]).any():
+                    print(f"No or insufficient information to fit distribtuion for {name}, cycle N = {n}")
+                else:  
+                    if Model_fct != 1: # If model factor is 1, no change to the results therefore no step here
+                        BE = x_percentiles[n][1]
+                        new_values = (values - BE)*Model_fct + BE
+                        output_fit_params[n] = Distributions.fit_distribution_cdf(new_values, dist_str) # updating curve fit - don't refit best type if automated fit option, apply the one already selected
+                        x_percentiles[n] = dist.ppf(percentiles, *output_fit_params[n])
+
+            # Plotting LE, BE, HE evolution with cycle number with smoothed line for each
+            cycles = sorted(x_percentiles.keys())
+            LE_values = [x_percentiles[cyc][0] for cyc in cycles]
+            BE_values = [x_percentiles[cyc][1] for cyc in cycles]
+            HE_values = [x_percentiles[cyc][2] for cyc in cycles]
+            cyc_plotting = np.array(cycles)
+            LE_plotting = smooth_curve(cyc_plotting, np.array(LE_values))
+            BE_plotting = smooth_curve(cyc_plotting, np.array(BE_values))
+            HE_plotting = smooth_curve(cyc_plotting, np.array(HE_values))
+
+            plot_by_cycle(name, cyc_plotting, LE_plotting, BE_plotting, HE_plotting, output_folder)
+
+
+def smooth_curve(x, y):
+    from scipy.interpolate import make_interp_spline
+    import numpy as np
+
+    if len(x) < 3:
+        return x, y  # Not enough points to smooth
+    
+    spline = make_interp_spline(x, y, k=2 if len(x) < 4 else 3)
+    y_smooth = spline(x)
+    return y_smooth
+
+
+def plot_by_cycle(param_name, cyc, LE, BE, HE, output_folder):
+    import matplotlib.pyplot as plt
+    import PSI_resultformat
+
+    fig, ax = plt.subplots()
+    ax.plot(cyc, LE, label='LE', color='blue', linewidth=2)
+    ax.plot(cyc, BE, label='BE', color='grey', linewidth=2)
+    ax.plot(cyc, HE, label='HE', color='red', linewidth=2)
+    ax.set_xlim(min(cyc), max(cyc))
+    ax.set_ylim(0, max(HE)*1.1)
+    ax.set_xlabel("Cycle Number, N (-)")
+    PSI_resultformat.hard_coded_cyc_headings(ax, param_name)
+    ax.legend()
+    fig.tight_layout()
+
+    from datetime import datetime
+    time_stamp = datetime.now().strftime('%Y%m%d_%H%M') # Generate a date-time stamp
+    save_name = f'{param_name}_Evolution_by_Cycle_{time_stamp}.pdf'
+    save_path = output_folder / save_name
+    fig.savefig(save_path, bbox_inches='tight')
+    plt.close(fig)

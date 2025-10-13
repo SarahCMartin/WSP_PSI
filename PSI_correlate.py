@@ -43,7 +43,7 @@ def correlate_variable_pair(base_variable, changing_variable, corr_index, name_b
     #print(corr_matrix_before)
     #corrplot0 = plotcorr(data.T, labels=["Base Variable - before", "Changing Variable - before"])
     fig, ax = plt.subplots()
-    ax.scatter(data[:,0], data[:,1], s=20)
+    ax.scatter(data[:,0], data[:,1], s=20, color='red')
     xmin = min(data[:,0])
     xmax = max(data[:,0])
     ymin = min(data[:,1])
@@ -58,7 +58,7 @@ def correlate_variable_pair(base_variable, changing_variable, corr_index, name_b
     #print(corr_matrix_after)
     
     #corrplot1 = plotcorr(new_data.T, labels=["Base Variable - after", "Changing Variable - after"])
-    ax.scatter(new_data[:,0], new_data[:,1], s=20)
+    ax.scatter(new_data[:,0], new_data[:,1], s=20, color='blue')
     xmin = min(xmin, min(new_data[:,0]))
     xmax = max(xmax, max(new_data[:,0]))
     ymin = min(ymin, min(new_data[:,1]))
@@ -69,7 +69,7 @@ def correlate_variable_pair(base_variable, changing_variable, corr_index, name_b
     ax.set_title('Correlation of Input Variables')
     ax.text(0.96, 0.96, f'Initial Correlation Index: {corr_index_before:.2f}\nTarget Correlation Index: {corr_index:.2f}\nActual Correlation Index: {actual_corr_index:.2f}', transform=ax.transAxes, fontsize=12, fontweight='bold', ha='right', va='top')
     PSI_resultformat.hard_coded_corr_headings(ax, name_base_var, name_changing_var)
-    plt.show()
+    #plt.show()
 
     from datetime import datetime
     time_stamp = datetime.now().strftime('%Y%m%d_%H%M') # Generate a date-time stamp
