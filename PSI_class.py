@@ -1,11 +1,14 @@
 class PSI:
     """Represents a set of all input parameters and the associated output results from PSI analysis"""
-    def __init__(self, dictionary, z_aslaid=0, z_hydro=0, z_res=0, ff_lat_brk_D=0, ff_lat_brk_UD=0, y_lat_brk=[0,0,0], ff_lat_res_D=0, ff_lat_res_UD=0, y_lat_res=[0,0,0], ff_ax_D=0, ff_ax_UD=0, x_ax=[0,0,0], ff_lat_cyc=[], ff_lat_berm=[], ff_ax_cyc = [], z_cyc=[]):
+    def __init__(self, dictionary, z_aslaid=0, zD_aslaid=0, z_hydro=0, zD_hydro=0, z_res=0, zD_res=0, ff_lat_brk_D=0, ff_lat_brk_UD=0, y_lat_brk=[0,0,0], ff_lat_res_D=0, ff_lat_res_UD=0, y_lat_res=[0,0,0], ff_ax_D=0, ff_ax_UD=0, x_ax=[0,0,0], ff_lat_cyc=[], ff_lat_berm=[], ff_ax_cyc = [], z_cyc=[], zD_cyc=[]):
         for k, v in dictionary.items():
             setattr(self, k, v)
         self.z_aslaid = z_aslaid
+        self.zD_aslaid = zD_aslaid
         self.z_hydro = z_hydro
+        self.zD_hydro = zD_hydro
         self.z_res = z_res
+        self.zD_res = zD_res
         self.ff_lat_brk_D = ff_lat_brk_D
         self.ff_lat_brk_UD = ff_lat_brk_UD
         self.y_lat_brk = y_lat_brk
@@ -19,6 +22,7 @@ class PSI:
         self.ff_lat_berm = ff_lat_berm
         self.ff_ax_cyc = ff_ax_cyc
         self.z_cyc = z_cyc
+        self.zD_cyc = zD_cyc
 
 
     def __str__(self):
@@ -41,6 +45,7 @@ class PSI:
         import PSI_embedment
         [self.z_aslaid, B_aslaid] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_empty, self.alpha, self.EI, self.T0, self.z_ini, self.gamma_sub, insitu_calc_depths, emb_su_inc, [], self.phi)
         #print("As-laid Embedment:", self.z_aslaid)
+        self.zD_aslaid = self.z_aslaid/self.D # normalised embedment
         
         ###########################################################################
         # Consolidation Between Pipelay and Hydrotest
@@ -63,6 +68,7 @@ class PSI:
         PhaseNo = 3
         [self.z_hydro, B_hydro] = PSI_embedment.embedment(PhaseNo, self.Emb_hydro_model, self.D, self.W_hydro, self.alpha, [], [], self.z_aslaid, self.gamma_sub, postlay_calc_depths, su_consol_postlay, [], self.phi)
         #print("Hydrotest Embedment:", self.z_hydro)
+        self.zD_hydro = self.z_hydro/self.D # normalised embedment
 
         ###########################################################################
         # Consolidation During Hydrotest and Until Operation (incl. time flooded and empty)
@@ -134,6 +140,8 @@ class PSI:
         else: # Lat_res_model 1 or 11 (SAFEBUCK empirical relationships) use pre-breakout embedment z_hydro
             self.z_res = self.z_hydro
             B_res = B_hydro
+
+        self.zD_res = self.z_res/self.D # normalised embedment
 
         ff_lat_res_UD_temp = {}
         for model in self.Lat_res_model:

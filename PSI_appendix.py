@@ -77,7 +77,7 @@ input_figures = {
     if var in preferred_input_order
 }
 
-preferred_output_order = ['z_aslaid', 'z_hydro', 'ff_ax', 'ff_lat_brk', 'z_res', 'ff_lat_res']
+preferred_output_order = ['zD_aslaid', 'zD_hydro', 'ff_ax', 'ff_lat_brk', 'zD_res', 'ff_lat_res']
 output_figures = {
     var: value for var, value in distribution_figures.items()
     if var in preferred_output_order

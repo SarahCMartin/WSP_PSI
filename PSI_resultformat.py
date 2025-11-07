@@ -144,16 +144,31 @@ def hard_coded_headings(fig, ax, param_name):
         fig.suptitle("As-laid Embedment - Results", fontsize=14)
         ax[0].set_xlabel(r"As-laid Embedment, $z_{\text{as-laid}}$ (m)")
         ax[1].set_xlabel(r"As-laid Embedment, $z_{\text{as-laid}}$ (m)")
-    
+
+    elif param_name == 'zD_aslaid':
+        fig.suptitle("Normalised As-laid Embedment - Results", fontsize=14)
+        ax[0].set_xlabel(r"Normalised As-laid Embedment, $z_{\text{as-laid}}/D$ (-)")
+        ax[1].set_xlabel(r"Normalised As-laid Embedment, $z_{\text{as-laid}}/D$ (-)")
+            
     elif param_name == 'z_hydro':
         fig.suptitle("Hydrotest Embedment - Results", fontsize=14)
         ax[0].set_xlabel(r"Hydrotest Embedment, $z_{hydro}$ (m)")
         ax[1].set_xlabel(r"Hydrotest Embedment, $z_{hydro}$ (m)")
+            
+    elif param_name == 'zD_hydro':
+        fig.suptitle("Normalised Hydrotest Embedment - Results", fontsize=14)
+        ax[0].set_xlabel(r"Normalised Hydrotest Embedment, $z_{hydro}/D$ (-)")
+        ax[1].set_xlabel(r"Normalised Hydrotest Embedment, $z_{hydro}/D$ (-)")
 
     elif param_name == 'z_res':
         fig.suptitle("Residual (post-breakout) Embedment - Results", fontsize=14)
         ax[0].set_xlabel(r"Residual Embedment, $z_{res}$ (m)")
         ax[1].set_xlabel(r"Residual Embedment, $z_{res}$ (m)")
+
+    elif param_name == 'zD_res':
+        fig.suptitle("Normalised Residual (post-breakout) Embedment - Results", fontsize=14)
+        ax[0].set_xlabel(r"Normalised Residual Embedment, $z_{res}/D$ (-)")
+        ax[1].set_xlabel(r"Normalised Residual Embedment, $z_{res}/D$ (-)")
 
     elif param_name == 'ff_lat_brk_UD':
         fig.suptitle("Lateral Breakout Friction Factor - Undrained Results", fontsize=14)
@@ -411,10 +426,16 @@ def hard_coded_caption(param_name):
     # Outputs
     elif param_name == 'z_aslaid':
         param_string = r"As-laid Embedment, $z_{\text{as-laid}}$"
+    elif param_name == 'zD_aslaid':
+        param_string = r"Normalised As-laid Embedment, $z_{\text{as-laid}}/D$"
     elif param_name == 'z_hydro':
         param_string = r"Hydrotest Embedment, $z_{hydro}$"
+    elif param_name == 'zD_hydro':
+        param_string = r"Normalised Hydrotest Embedment, $z_{hydro}/D$"
     elif param_name == 'z_res':
         param_string = r"Residual Embedment, $z_{res}$"
+    elif param_name == 'zD_res':
+        param_string = r"Normalised Residual Embedment, $z_{res}/D$"
     elif param_name == 'ff_lat_brk_UD':
         param_string = r"UD Lateral Breakout FF, $\mu_{{lat,brk,UD}}$"
     elif param_name == 'ff_lat_brk_D':

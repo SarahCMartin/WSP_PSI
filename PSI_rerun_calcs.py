@@ -113,7 +113,7 @@ else:
 
 ###########################################################################
 # Plotting results and fitting distributions to them
-to_fit_and_plot = ['z_aslaid', 'z_hydro', 'z_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
+to_fit_and_plot = ['zD_aslaid', 'zD_hydro', 'zD_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
 
 cyclic_keys = ['ff_lat_berm', 'ff_lat_cyc', 'ff_ax_cyc']
 for key in cyclic_keys:
