@@ -191,25 +191,25 @@ def bearing_capacity_0(su_z, su_mudline, su0, z, z_su0, alpha, B, D, gamma_sub, 
 
 def grad_correction(su_z, su_mudline, su0, delta_su, z, B, alpha):
     # Friction and strength gradient correction factor from DNVGL-RP-F114 Figure 4-4, fit to 6th order polynomial in excel
-    F_fit_rough = [-6E-7, 3E-5, -7E-4, 8.8E-3, -6.14E-2, 0.2706, 1.0007] # coefficients for 6th order polynomial assuming rough pipe
-    F_fit_smooth = [-2E-7, 1E-5, -3E-4, 3.6E-3, -2.62E-2, 0.1341, 0.9999] # coefficients for 6th order polynomial assuming smooth pipe
+    F_fit_rough = [-5.671E-7, 3.200E-5, -7.308E-4, 8.783E-3, -6.137E-2, 0.2706, 1.0007] # coefficients for 6th order polynomial assuming rough pipe
+    F_fit_smooth = [-2.315E-7, 1.299E-5, -2.946E-4, 3.562E-3, -2.624E-2, 0.1341, 0.9999] # coefficients for 6th order polynomial assuming smooth pipe
     F_bounds = [0, 16] # boundary of (delta_su*B/su0) values for which 6th order polynomial can be used for F
 
-    delta_su = (su_z - su_mudline)/z # taking average gradient over initial estimate of embedded depth
+    #delta_su = (su_z - su_mudline)/z # taking average gradient over initial estimate of embedded depth
     str_grad_var = delta_su*B/su0 # variable relating to strength variation with depth, used to find correction factor F
     if str_grad_var < F_bounds[0]: # warning will display if value at the end of iteration is outside the bounds from DNV plot
         str_grad_var = 0
     elif str_grad_var > F_bounds[1]: # warning will display if value at the end of iteration is outside the bounds from DNV plot
         str_grad_var = 16
     
-    F_rough = F_fit_rough[0]*str_grad_var**6 + F_fit_rough[1]*str_grad_var**5 + F_fit_rough[2]*str_grad_var**4 + F_fit_rough[3]*str_grad_var**3 + F_fit_rough[4]*str_grad_var**2 + F_fit_rough[5]*str_grad_var + F_fit_rough[6];
-    F_smooth = F_fit_smooth[0]*str_grad_var**6 + F_fit_smooth[1]*str_grad_var**5 + F_fit_smooth[2]*str_grad_var**4 + F_fit_smooth[3]*str_grad_var**3 + F_fit_smooth[4]*str_grad_var**2 + F_fit_smooth[5]*str_grad_var + F_fit_smooth[6];
+    F_smooth = F_fit_smooth[0]*str_grad_var**6 + F_fit_smooth[1]*str_grad_var**5 + F_fit_smooth[2]*str_grad_var**4 + F_fit_smooth[3]*str_grad_var**3 + F_fit_smooth[4]*str_grad_var**2 + F_fit_smooth[5]*str_grad_var + F_fit_smooth[6]
+    F_rough = F_fit_rough[0]*str_grad_var**6 + F_fit_rough[1]*str_grad_var**5 + F_fit_rough[2]*str_grad_var**4 + F_fit_rough[3]*str_grad_var**3 + F_fit_rough[4]*str_grad_var**2 + F_fit_rough[5]*str_grad_var + F_fit_rough[6]
     if alpha == 0:
         F = F_smooth
     elif alpha == 1:
         F = F_rough
     else:
-        F = (F_rough-F_smooth)*alpha + F_smooth; # linearly interpolating if selected to be between smooth and rough
+        F = (F_rough-F_smooth)*alpha + F_smooth # linearly interpolating if selected to be between smooth and rough
     
     #if str_grad_var < F_bounds[0]: # str_grad_var will be final value from iteration corresponding to z_aslaid
         #print("Strength gradient variable appears erroneous (< 0), please check. Assumed delta_su*B/su0 = 0.")

@@ -44,7 +44,7 @@ def hard_coded_headings(fig, ax, param_name):
         ax[1].set_xlabel(r"Bending Stiffness, EI (kNm$^2$)")
 
     elif param_name == 'T0':
-        fig.suptitle("Lay Tension as Touchdown - Fit and Generated Inputs", fontsize=14)
+        fig.suptitle("Lay Tension at Touchdown - Fit and Generated Inputs", fontsize=14)
         ax[0].set_xlabel(r"Lay Tension, $T_0$ (kN)")
         ax[1].set_xlabel(r"Lay Tension, $T_0$ (kN)")
 
@@ -255,6 +255,7 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_xlabel(r"Lateral Soil Sensitivity, $S_{{t,lateral}}$ (-)")
     elif name_base_var == 'cv':
         ax.set_xlabel(r"Coefficient of Consolidation, $c_v$ (m$^2$/year)")
+        ax.set_xscale('log')
     elif name_base_var == 'SHANSEP_S':
         ax.set_xlabel(r"SHANSEP S for Soil-Soil, $S_{soil}$ (-)")
     elif name_base_var == 'SHANSEP_m':
@@ -311,6 +312,7 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_ylabel(r"Lateral Soil Sensitivity, $S_{{t,lateral}}$ (-)")
     elif name_changing_var == 'cv':
         ax.set_ylabel(r"Coefficient of Consolidation, $c_v$ (m$^2$/year)")
+        ax.set_xscale('log')
     elif name_changing_var == 'SHANSEP_S':
         ax.set_ylabel(r"SHANSEP S for Soil-Soil, $S_{soil}$ (-)")
     elif name_changing_var == 'SHANSEP_m':

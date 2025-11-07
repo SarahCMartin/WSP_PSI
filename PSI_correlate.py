@@ -131,13 +131,22 @@ def induce_correlations(data, corrmat):
 
     # Sort the original data according to new_data_rank
     for i in range(data.shape[1]):
-        vals, order = np.unique(
-            np.hstack((data_rank[:, i], new_data_rank[:, i])), return_inverse=True
-        )
-        old_order = order[: new_data_rank.shape[0]]
-        new_order = order[-new_data_rank.shape[0] :]
-        tmp = data[np.argsort(old_order), i][new_order]
-        data[:, i] = tmp[:]
+        # Sort the original column by its rank
+        sorted_data = np.sort(data[:, i])
+    
+        # Get the order that sorts the new ranks
+        new_order = np.argsort(np.argsort(new_data_rank[:, i]))
+    
+        # Reassign the sorted values according to the new rank order
+        data[:, i] = sorted_data[new_order]
+        
+        # vals, order = np.unique(
+        #     np.hstack((data_rank[:, i], new_data_rank[:, i])), return_inverse=True
+        # )
+        # old_order = order[: new_data_rank.shape[0]]
+        # new_order = order[-new_data_rank.shape[0] :]
+        # tmp = data[np.argsort(old_order), i][new_order]
+        # data[:, i] = tmp[:]
 
     return data
 

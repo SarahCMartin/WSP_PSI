@@ -221,8 +221,10 @@ def generate_rolls(d, No_rolls, results_path=None):
         elif dist == 'normal':
             mu, sigma = Distributions.fit_normal_to_percentiles(LE, BE, HE, Min)
             fit_info[name] = [dist, (mu, sigma)]
-            rolls[name] = truncnorm.rvs(loc=mu, scale=sigma, size=No_rolls)
-            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], truncnorm, (mu, sigma), samples=rolls[name], param_name=name, dist_name='Normal', results_path=results_path, type='input')
+            a = (Min - mu)/sigma
+            b = np.inf
+            rolls[name] = truncnorm.rvs(a, b, loc=mu, scale=sigma, size=No_rolls)
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], truncnorm, (a, b, mu, sigma), samples=rolls[name], param_name=name, dist_name='Normal', results_path=results_path, type='input')
 
         elif dist == 'log-normal':
             s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE, Min)

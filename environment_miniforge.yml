@@ -1,0 +1,8 @@
+name: PSI
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - statsmodels
+  - mcerp
+prefix: C:\Users\AUSM504495\AppData\Local\miniforge3\envs\PSI
