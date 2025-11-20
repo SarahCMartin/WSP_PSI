@@ -16,7 +16,7 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
 
     ###########################################################################
     # Setting strength profile output as empty if all phases are modelled as drained
-    if Emb_aslaid_model >= 10 and Emb_hydro_model >= 10 and Lat_brk_model >= 10 and Lat_res_model >= 10 and Emb_res_model >= 10 and Ax_model >= 10: # soil always modelled as drained
+    if all((v >= 10 if not isinstance(v, list) else all(x >= 10 for x in v)) for v in [Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_model, Emb_res_model, Ax_model]): # soil always modelled as drained
         su_inc = []
 
     ###########################################################################
@@ -35,22 +35,27 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
         elif PhaseNo == 4 or PhaseNo == 6: # profile to be used for consolidation calculation during hydrotest and between hydrotest and operation
             su_ini = Common.linear_extrapolate(calc_depths, prev_calc_depths, prev_su_inc)
 
-    ###########################################################################
-    # Applying sensitivity to reflect remoulding over varying depths depending on the calculation phase
-    if PhaseNo == 1 or PhaseNo == 5: # profile to be used for as-laid embedment calculation and soil either side of pipe for lateral resistance with their associates St factors
-        su_inc = [x/St for x in su_ini]
-    elif PhaseNo == 2: # profile to be used for consolidation calculation
-        su_inc = su_ini
-        for i in range(len(calc_depths)):
-            if calc_depths[i] <= (z+0.1*D): # fully remoulded in zone 0.1D below pipe invert
-                su_inc[i] = su_ini[i]/St
-            elif calc_depths[i] > (z+0.1*D) and calc_depths[i] <= (z+0.2*D): # transition from fully rmoulded to in-situ strength from 0.1D to 0.2D below pipe invert
-                partial_St = St - (St-1)*(calc_depths[i]-(z+0.1*D))/(0.1*D)
-                su_inc[i] = su_ini[i]/partial_St
-    elif PhaseNo == 4 or PhaseNo == 6: # profile to be used for consolidation calculation during hydrotest and between hydrotest and operation
-        su_inc = su_ini # remoulded zone and transition unchanged from previous profile so St not applied here
+        ###########################################################################
+        # Applying sensitivity to reflect remoulding over varying depths depending on the calculation phase
+        if PhaseNo == 1 or PhaseNo == 5: # profile to be used for as-laid embedment calculation and soil either side of pipe for lateral resistance with their associates St factors
+            su_inc = [x/St for x in su_ini]
+        elif PhaseNo == 2: # profile to be used for consolidation calculation
+            su_inc = su_ini
+            for i in range(len(calc_depths)):
+                if calc_depths[i] <= (z+0.1*D): # fully remoulded in zone 0.1D below pipe invert
+                    su_inc[i] = su_ini[i]/St
+                elif calc_depths[i] > (z+0.1*D) and calc_depths[i] <= (z+0.2*D): # transition from fully rmoulded to in-situ strength from 0.1D to 0.2D below pipe invert
+                    partial_St = St - (St-1)*(calc_depths[i]-(z+0.1*D))/(0.1*D)
+                    su_inc[i] = su_ini[i]/partial_St
+        elif PhaseNo == 4 or PhaseNo == 6: # profile to be used for consolidation calculation during hydrotest and between hydrotest and operation
+            su_inc = su_ini # remoulded zone and transition unchanged from previous profile so St not applied here
 
     return [calc_depths, su_inc]
+
+
+def drained_reduction(phi, pipelay_Fct):
+    emb_phi = phi/pipelay_Fct
+    return emb_phi
 
 
 def consolidation(PhaseNo, pressure_pipe, t, calc_depths, su_inc, gamma_sub, cv, SHANSEP_S, SHANSEP_m, D, z, B, prev_yield_stress, prev_vert_eff, int_switch):

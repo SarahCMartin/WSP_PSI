@@ -123,6 +123,11 @@ def hard_coded_headings(fig, ax, param_name):
         ax[0].set_xlabel(r"Friction Angle for Soil-Soil, $\phi$ ($^\circ$)")
         ax[1].set_xlabel(r"Friction Angle for Soil-Soil, $\phi$ ($^\circ$)")
 
+    elif param_name == 'pipelay_Fct':
+        fig.suptitle("Soil Disturbance Factor for Drained Pipelay Calculations - Fit and Generated Inputs", fontsize=14)
+        ax[0].set_xlabel(r"Pipelay Disturbance Factor, $F_{{D,pipelay}}$ (-)")
+        ax[1].set_xlabel(r"Pipelay Disturbance Factor, $F_{{D,pipelay}}$ (-)")
+
     elif param_name == 'int_SHANSEP_S':
         fig.suptitle("Normalised Shear Strength for NC Condition (Soil-Interface) - Fit and Generated Inputs", fontsize=14)
         ax[0].set_xlabel(r"SHANSEP S for Soil-Interface, $S_{int}$ (-)")
@@ -281,6 +286,8 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_xlabel(r"Pressure Resistance Coefficient, $k_p$ (-)")
     elif name_base_var == 'phi':
         ax.set_xlabel(r"Friction Angle for Soil-Soil, $\phi$ ($^\circ$)")
+    elif name_base_var == 'pipelay_Fct':
+        ax.set_xlabel(r"Pipelay Disturbance Factor, $F_{{D,pipelay}}$ (-)")
     elif name_base_var == 'int_SHANSEP_S':
         ax.set_xlabel(r"SHANSEP S for Soil-Interface, $S_{int}$ (-)")
     elif name_base_var == 'int_SHANSEP_m':

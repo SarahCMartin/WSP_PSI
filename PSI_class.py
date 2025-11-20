@@ -41,9 +41,10 @@ class PSI:
         PhaseNo = 1
         [insitu_calc_depths, insitu_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, 1, [], [], [])
         [_, emb_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, [], [], [])
+        emb_phi = PSI_soils.drained_reduction(self.phi, self.pipelay_Fct)
 
         import PSI_embedment
-        [self.z_aslaid, B_aslaid] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_empty, self.alpha, self.EI, self.T0, self.z_ini, self.gamma_sub, insitu_calc_depths, emb_su_inc, [], self.phi)
+        [self.z_aslaid, B_aslaid] = PSI_embedment.embedment(PhaseNo, self.Emb_aslaid_model, self.D, self.W_empty, self.alpha, self.EI, self.T0, self.z_ini, self.gamma_sub, insitu_calc_depths, emb_su_inc, [], emb_phi)
         #print("As-laid Embedment:", self.z_aslaid)
         self.zD_aslaid = self.z_aslaid/self.D # normalised embedment
         
@@ -99,14 +100,15 @@ class PSI:
         if self.Emb_aslaid_model >= 10 and self.Emb_hydro_model >= 10 and all(model>=10 for model in self.Lat_brk_model) and all(model>=10 for model in self.Lat_res_model) and all(model>=10 for model in self.Ax_model): # soil always modelled as drained
             su_consol_preop = []
             int_su_consol_preop = []
+            int_vert_eff_max =[]
         else: #  soil modelled as undrained in at least 1 calculation stage (excl. cyclic where only method available used in-situ strength) so profiles need to be updated for consolidation throughout
             pressure_preop = self.W_empty/B_hydro
             [su_consol_preop, yield_stress_preop, vert_eff_preop] = PSI_soils.consolidation(PhaseNo, pressure_preop, self.t_preop, hydro_calc_depths, su_consol_hydro, self.gamma_sub, self.cv, self.SHANSEP_S, self.SHANSEP_m, self.D, self.z_hydro, B_hydro, yield_stress_hydro, vert_eff_hydro, 0)
             [int_su_consol_preop, int_yield_stress_preop, int_vert_eff_preop] = PSI_soils.consolidation(PhaseNo, pressure_preop, self.t_preop, hydro_calc_depths, int_su_consol_hydro, self.gamma_sub, self.cv, self.int_SHANSEP_S, self.int_SHANSEP_m, self.D, self.z_hydro, B_hydro, int_yield_stress_hydro, int_vert_eff_hydro, 1)
             # print(su_consol_preop, yield_stress_preop, vert_eff_preop)
-
-        # Maximum previous vertical effective stress at interface (i.e. pipe invert level, first row in each profile from interface consolidation calc even though corresponding depth moves slightly with any additional hydrotest embedment)
-        int_vert_eff_max = max([int_vert_eff_postlay[0], int_vert_eff_hydro[0], int_su_consol_preop[0]])
+            
+            # Maximum previous vertical effective stress at interface (i.e. pipe invert level, first row in each profile from interface consolidation calc even though corresponding depth moves slightly with any additional hydrotest embedment)
+            int_vert_eff_max = max([int_vert_eff_postlay[0], int_vert_eff_hydro[0], int_su_consol_preop[0]])
         # print(int_vert_eff_max)
 
         ###########################################################################
@@ -123,7 +125,8 @@ class PSI:
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
                 [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_hydro, B_hydro)
         
-        self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_hydro, self.D)
+        if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_brk_UD_temp.keys()):
+            self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_hydro, self.D)
         
         #print("UD Lateral Breakout FF:", self.ff_lat_brk_UD, "D Lateral Breakout FF:", self.ff_lat_brk_D, "Lateral Breakout Mobilisation Displacements:", self.y_lat_brk)
 
@@ -163,7 +166,8 @@ class PSI:
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
                 [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, [], self.z_res, [])
         
-        self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp, self.z_res, self.D)
+        if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_res_UD_temp.keys()):
+            self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp, self.z_res, self.D)
 
         #print("UD Lateral Residual FF:", self.ff_lat_res_UD, "D Lateral Residual FF:", self.ff_lat_res_D, "Lateral Residual Mobilisation Displacements:", self.y_lat_res)
 

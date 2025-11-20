@@ -73,7 +73,7 @@ def embedment(PhaseNo, Emb_model, D, W, alpha, EI, T0, z_ini, gamma_sub, calc_de
                 z = (z_track[-1] + z_track[next(x for x in range(len(z_track)-1,-1,-1) if Qv_track[x] < W_track[x])])/2
 
         else: # weight exceeds last bearing capacity
-            if len(Qv_track) == 1: # first iteration, taking 2D embedment to check if results are within viable range before further iterations
+            if len(Qv_track) == 1: # first iteration, taking 4D embedment to check if results are within viable range before further iterations
                 z = 4*D
             elif len(Qv_track) == 2 and Qv_track[0] < W_track[0]: # second iteration; too much weight for embedment using both initial guess and 4D, exit calculation but set to 4D so it doesn't cause error
                 #print("Embedment > 4D, please check inputs. z = 4D used for subsequent calculations of this dice roll.")
