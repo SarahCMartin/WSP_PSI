@@ -103,28 +103,28 @@ for entry in results:
     for k, v in entry['outputs'].items():
         list_results.setdefault(k, []).append(v)
 
-suffix_map = {
-    2: ["LE", "HE"],
-    3: ["LE", "BE", "HE"],
-}
+# suffix_map = {
+#     2: ["LE", "HE"],
+#     3: ["LE", "BE", "HE"],
+# }
 
-for key, value in list(list_results.items()):
-    if (
-        isinstance(value, list)
-        and all(isinstance(i, list) for i in value)
-        and len(value) > 0
-        and all(len(i) == len(value[0]) for i in value) # consistent inner length
-        and len(value[0]) in suffix_map                 # only process 2 or 3 values because these are known to be LE-HE or LE-BE-HE, any other length >1 would be erroneous
-    ):
-        # Transpose the list of lists
-        transposed = list(map(list, zip(*value)))
+# for key, value in list(list_results.items()):
+#     if (
+#         isinstance(value, list)
+#         and all(isinstance(i, list) for i in value)
+#         and len(value) > 0
+#         and all(len(i) == len(value[0]) for i in value) # consistent inner length
+#         and len(value[0]) in suffix_map                 # only process 2 or 3 values because these are known to be LE-HE or LE-BE-HE, any other length >1 would be erroneous
+#     ):
+#         # Transpose the list of lists
+#         transposed = list(map(list, zip(*value)))
 
-        # Assign each column to a new key with a suffix
-        for i, suffix in enumerate(suffix_map[len(value[0])]):
-            list_results[f"{key}_{suffix}"] = transposed[i]
+#         # Assign each column to a new key with a suffix
+#         for i, suffix in enumerate(suffix_map[len(value[0])]):
+#             list_results[f"{key}_{suffix}"] = transposed[i]
 
-        # Remove the original unsplit key
-        del list_results[key]
+#         # Remove the original unsplit key
+#         del list_results[key]
 
 end = time.time()
 #print(list_results['z_aslaid'])
@@ -148,7 +148,12 @@ else:
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['zD_aslaid', 'zD_hydro', 'zD_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
 
-cyclic_keys = ['ff_lat_berm', 'ff_lat_cyc', 'ff_ax_cyc'] 
+# base_cyclic_keys = ["ff_lat_berm", "ff_lat_cyc", "ff_ax_cyc"]
+# suffixes = ["", "_LE", "_BE", "_HE"]
+# possible_keys = {base + suf for base in base_cyclic_keys for suf in suffixes}
+# cyclic_keys = [k for k in list_results.keys() if k in possible_keys]
+cyclic_keys = ["ff_lat_berm", "ff_lat_cyc", "ff_ax_cyc"]
+
 for key in cyclic_keys:
     list_of_lists = list_results[key]
     for n in d['No_cycles']:
