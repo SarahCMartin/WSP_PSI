@@ -149,19 +149,19 @@ class PSI:
         ff_lat_res_UD_temp = {}
         for model in self.Lat_res_model:
             if model < 10: # Undrained
-                if model == 0: # in-situ yield stress ratio and existing vertical stresses needed for SHANSEP part of this model
+                # if model == 0: # in-situ yield stress ratio and existing vertical stresses needed for SHANSEP part of this model only, but need to be passed for both as DNV is applied as back up where envelope cannot be solved
                     # Note: this model uses interface behaviour, therefore consolidation calculation run with interface SHANSEP parameters but not assuming full remoulding as for the interface under pipelay
                     # position due to the disturbance effects of installation, therefore interface swicth set to 0 instead of 1
-                    pressure_res_op = self.W_op/B_res
+                pressure_res_op = self.W_op/B_res
             
                     # Time always assumed to be 0 as this immediately follows breakout, therefore no change in su and first output can be blank
-                    [_, int_yield_stress_res, int_vert_eff_res] = PSI_soils.consolidation(PhaseNo, pressure_res_op, 0, res_calc_depths, res_su_inc, self.gamma_sub, self.cv, self.int_SHANSEP_S, self.int_SHANSEP_m, self.D, self.z_res, B_res, [], [], 0)
+                [_, int_yield_stress_res, int_vert_eff_res] = PSI_soils.consolidation(PhaseNo, pressure_res_op, 0, res_calc_depths, res_su_inc, self.gamma_sub, self.cv, self.int_SHANSEP_S, self.int_SHANSEP_m, self.D, self.z_res, B_res, [], [], 0)
                     # print(int_yield_stress_res, int_vert_eff_res)
 
                     # Max previous for subsequent SHANSEP calc will come from int_yield_stress_res[0] as strength will be defined by the past load history rather than loading phases applied during installation, hydrotest, etc.
-                    [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_res, B_res)
-                else: 
-                    [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, self.alpha, [], [], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, [], [], [], self.z_hydro, self.z_res, B_res)
+                [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_hydro, self.z_res, B_res)
+                # else: 
+                #     [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, [], [], [], self.z_hydro, self.z_res, B_res)
         
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
                 [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, [], self.z_res, [])

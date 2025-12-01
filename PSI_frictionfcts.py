@@ -120,6 +120,10 @@ def latbrk(PhaseNo, Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_ma
             if abs(Hmax_found - Hmax) > 0.001:
                 print("V at Hmax was not found correctly, please check calculation")
 
+        elif np.isnan(ff_lat_brk): # occurs in some cases for very small embedments, particularly the enforced min z = 0.001 m
+            print("Envelope lateral breakout erroneous, DNV Method 1 applied for this iteration")
+            [ff_lat_brk, y_lat_brk] = latbrk(PhaseNo, 0, Lat_brk_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z, B)
+
     ###########################################################################
     # DNVGL-RP-F114 Drained Model 1, Section 4.4.2.3, adjusted to use tan(delta) directly, i.e. interface friction, rather than r*tan(phi)
     elif Lat_brk_model == 10:
@@ -165,7 +169,7 @@ def latres(PhaseNo, Lat_res_model, Lat_res_suction, D, W, alpha, int_vert_eff_ma
     ###########################################################################
     # Generalised FE H-V Capacity Envelopes after Merifield et al 2008 approach, Vmax and Hmax formulation from Merifield et al 2009, formulations extended by WSP. Adjustments to lat brk formulation as above.
     elif Lat_res_model == 2:
-        [ff_lat_res, _] = latbrk(PhaseNo, 2, [], D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
+        [ff_lat_res, _] = latbrk(PhaseNo, 2, Lat_res_suction, D, W, alpha, int_vert_eff_max, int_vert_eff, calc_depths, [], insitu_su_inc, calc_depths, insitu_su_inc, gamma_sub, int_SHANSEP_S, int_SHANSEP_m, ka, kp, [], z_res, B_res)
 
     ###########################################################################
     # DNVGL-RP-F114 Drained Lateral Breakout Model 1, Section 4.4.2.3 with embedment reduced to post-breakout depth. Adjustments to lat brk formulation as above.
