@@ -39,7 +39,10 @@ def fit_best_dist_to_percentiles(LE, BE, HE, Min):
             predicted = np.array(dist_obj.ppf(probs, *params))
 
             # Calculate error (sum of squared differences)
-            quantile_error = np.sum((predicted - targets)**2)
+            # quantile_error = np.sum((predicted - targets)**2)
+            # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+            weights = np.linspace(2.0, 0.5, len(targets))
+            quantile_error = np.sum(weights * (predicted - targets) ** 2)
 
             # Penalty for suspicious shape parameters (which can lead to unrealistic distrributions getting low error and being selected)
             shape_penalty = 0.0
@@ -80,7 +83,10 @@ def fit_uniform(LE, BE, HE):
         if scale <= 0:
             return np.inf
         predicted = uniform.ppf(probs, loc=loc, scale=scale)
-        return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
     
     initial_guess = [LE, HE - LE]
     result = minimize(objective, initial_guess, method='Nelder-Mead')
@@ -104,7 +110,10 @@ def fit_normal_to_percentiles(LE, BE, HE, Min):
         a = (min_value-mu)/sigma
         b = np.inf
         predicted = truncnorm.ppf(probs, a, b, loc=mu, scale=sigma)
-        return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
 
     # Initial guess
     initial_guess = [BE, (HE - LE) / 4]
@@ -132,7 +141,10 @@ def fit_lognormal_to_percentiles(LE, BE, HE, Min):
     def objective(params):
         s, loc, scale = params
         predicted = lognorm.ppf(probs, s=s, loc=loc, scale=scale)
-        return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
 
     # Initial guess
     sigma_guess = (np.log(HE) - np.log(LE))/4
@@ -159,7 +171,10 @@ def fit_weibull_to_percentiles(LE, BE, HE, Min):
     def objective(params):
         c, loc, scale = params
         predicted = weibull_min.ppf(probs, c=c, loc=loc, scale=scale)
-        return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
 
     # Initial guess
     initial_guess = [1.5, min_value, HE-LE] # initial guesses from chatGPT, adjust if needed
@@ -212,7 +227,10 @@ def fit_gamma_to_percentiles(LE, BE, HE, Min):
     def objective(params):
         a, loc, scale = params
         predicted = gamma.ppf(probs, a=a, loc=loc, scale=scale)
-        return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
 
     # Initial guess
     shape_guess = 2
@@ -243,7 +261,10 @@ def fit_rayleigh_to_percentiles(LE, BE, HE, Min):
     def objective(params):
         loc, scale = params
         predicted = rayleigh.ppf(probs, loc=loc, scale=scale)
-        return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
 
     # Initial guess
     loc_guess = min_value
@@ -339,14 +360,22 @@ def fit_distribution_cdf(data, dist_name, return_error=False):
     def objective(params):
         try:
             cdf_vals = dist.cdf(sorted_data, *params)
-            return np.sum((cdf_vals - ecdf) ** 2)
+            # return np.sum((cdf_vals - ecdf) ** 2)
+            # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+            weights = np.linspace(2.0, 0.5, len(sorted_data))
+            return np.sum(weights * (cdf_vals - ecdf) ** 2)
+
         except Exception:
             return 1e10  # penalty for invalid params
 
     result = minimize(objective, init_params, bounds=bounds, method='L-BFGS-B')
     opt_params = result.x
-    final_error = np.sum((dist.cdf(sorted_data, *opt_params) - ecdf) ** 2)
-
+    # final_error = np.sum((dist.cdf(sorted_data, *opt_params) - ecdf) ** 2)
+    # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+    cdf_vals = dist.cdf(sorted_data, *opt_params)
+    weights = np.linspace(2.0, 0.5, len(sorted_data))
+    final_error = np.sum(weights * (cdf_vals - ecdf) ** 2)
+    
     if not result.success:
         raise RuntimeError(f"Optimization failed: {result.message}")
     
