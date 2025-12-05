@@ -1,12 +1,14 @@
 class PSI:
     """Represents a set of all input parameters and the associated output results from PSI analysis"""
-    def __init__(self, dictionary, z_aslaid=0, zD_aslaid=0, z_hydro=0, zD_hydro=0, z_res=0, zD_res=0, ff_lat_brk_D=0, ff_lat_brk_UD=0, y_lat_brk=[0,0,0], ff_lat_res_D=0, ff_lat_res_UD=0, y_lat_res=[0,0,0], ff_ax_D=0, ff_ax_UD=0, x_ax=[0,0,0], ff_lat_cyc=[], ff_lat_berm=[], ff_ax_cyc = [], z_cyc=[], zD_cyc=[]):
+    def __init__(self, dictionary, z_aslaid=0, zD_aslaid=0, z_hydro=0, zD_hydro=0, z_op_eff=0, zD_op_eff=0, z_res=0, zD_res=0, ff_lat_brk_D=0, ff_lat_brk_UD=0, y_lat_brk=[0,0,0], ff_lat_res_D=0, ff_lat_res_UD=0, y_lat_res=[0,0,0], ff_ax_D=0, ff_ax_UD=0, x_ax=[0,0,0], ff_lat_cyc=[], ff_lat_berm=[], ff_ax_cyc = [], z_cyc=[], zD_cyc=[]):
         for k, v in dictionary.items():
             setattr(self, k, v)
         self.z_aslaid = z_aslaid
         self.zD_aslaid = zD_aslaid
         self.z_hydro = z_hydro
         self.zD_hydro = zD_hydro
+        self.z_op_eff = z_op_eff
+        self.zD_op_eff = zD_op_eff
         self.z_res = z_res
         self.zD_res = zD_res
         self.ff_lat_brk_D = ff_lat_brk_D
@@ -39,8 +41,8 @@ class PSI:
         # As-laid Embedment
         import PSI_soils
         PhaseNo = 1
-        [insitu_calc_depths, insitu_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, 1, [], [], [])
-        [_, emb_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, [], [], [])
+        [insitu_calc_depths, insitu_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, 1, [], [], [], 0, [])
+        [_, emb_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, [], [], [], 0, [])
         emb_phi = PSI_soils.drained_reduction(self.phi, self.pipelay_Fct)
 
         import PSI_embedment
@@ -51,7 +53,7 @@ class PSI:
         ###########################################################################
         # Consolidation Between Pipelay and Hydrotest
         PhaseNo = 2
-        [postlay_calc_depths, postlay_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, self.z_aslaid, [], [])
+        [postlay_calc_depths, postlay_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.pipelay_St, self.z_aslaid, [], [], 0, [])
         # print(postlay_calc_depths, postlay_su_inc)
 
         if self.Emb_aslaid_model >= 10 and self.Emb_hydro_model >= 10 and all(model>=10 for model in self.Lat_brk_model) and all(model>=10 for model in self.Lat_res_model) and all(model>=10 for model in self.Ax_model): # soil always modelled as drained
@@ -74,8 +76,8 @@ class PSI:
         ###########################################################################
         # Consolidation During Hydrotest and Until Operation (incl. time flooded and empty)
         PhaseNo = 4
-        [hydro_calc_depths, hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, su_consol_postlay)
-        [_,int_hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, int_su_consol_postlay)
+        [hydro_calc_depths, hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, su_consol_postlay, 0, [])
+        [_,int_hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, int_su_consol_postlay, 0, [])
         # print(hydro_calc_depths, hydro_su_inc, int_hydro_su_inc)
 
         # Hydrotest
@@ -112,21 +114,39 @@ class PSI:
         # print(int_vert_eff_max)
 
         ###########################################################################
+        # Apply Berm as Effective Embedment (optional)
+        if self.Berm == 0: # no berm applied
+            self.z_op_eff = self.z_hydro
+            self.zD_op_eff = self.z_op_eff/self.D # normalised effective embedment is same as post-hydrotest embedment where no berm is applied
+
+        else: # self.Berm == 1, berm applied
+            self.z_op_eff = self.z_hydro*self.eff_emb_ratio
+            if self.z_op_eff > self.D: # capping the effective embedment at D or z_hydro as additional berm will not accumulate once pipe fully embedded but such cases could occur for certain combinations of random inputs
+                self.z_op_eff = max(self.D, self.z_hydro)
+            self.zD_op_eff = self.z_op_eff/self.D # normalised effective embedment
+
+        eff_berm_height = self.z_op_eff - self.z_hydro
+        [B_op_eff,_] = PSI_embedment.emb_geometry(self.z_op_eff, self.D)
+
+        op_calc_depths = hydro_calc_depths + eff_berm_height # adjusting depths so previously calculated consolidated strength at pipe invert will still be applied corrently even if z_op_eff != z_hydro as berm is not being considered to cause additional consolidation
+
+        ###########################################################################
         # Lateral Breakout Resistance
         PhaseNo = 5
-        [_, lat_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.lateral_St, [], [], [])
+        # Where berm is present this is included as layer at the top of the profile with thickness from effective berm height and same properties as mudline, by not outputting new depths with berm at <0, profile is realigned to work in subsequent calcs
+        [_, lat_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, self.su_profile, self.su_mudline, self.su_inv, self.z_su_inv, self.delta_su, self.lateral_St, [], [], [], self.Berm, eff_berm_height)
         # print(lat_su_inc)
 
         import PSI_frictionfcts
         ff_lat_brk_UD_temp = {}
         for model in self.Lat_brk_model:
             if model < 10: # Undrained
-                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, hydro_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_hydro, B_hydro)
+                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, op_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_op_eff, B_op_eff)
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_hydro, B_hydro)
+                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_op_eff, B_op_eff)
         
         if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_brk_UD_temp.keys()):
-            self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_hydro, self.D)
+            self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_op_eff, self.D)
         
         #print("UD Lateral Breakout FF:", self.ff_lat_brk_UD, "D Lateral Breakout FF:", self.ff_lat_brk_D, "Lateral Breakout Mobilisation Displacements:", self.y_lat_brk)
 
@@ -137,12 +157,12 @@ class PSI:
             [self.z_res, B_res] = PSI_embedment.embedment(PhaseNo, self.Emb_res_model, self.D, self.W_op, self.alpha, [], [], self.z_ini, self.gamma_sub, insitu_calc_depths, insitu_su_inc, lat_su_inc, self.phi)
             #print(self.z_res, B_res)
 
-            [res_calc_depths, res_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_res, insitu_calc_depths, insitu_su_inc)
+            [res_calc_depths, res_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_res, insitu_calc_depths, insitu_su_inc, 0, [])
             # print(res_calc_depths, res_su_inc)
 
-        else: # Lat_res_model 1 or 11 (SAFEBUCK empirical relationships) use pre-breakout embedment z_hydro
-            self.z_res = self.z_hydro
-            B_res = B_hydro
+        else: # Lat_res_model 1 or 11 (SAFEBUCK empirical relationships) use pre-breakout embedment z_op_eff (which will icnlude berm if present or equal z_hydro if no berm applied)
+            self.z_res = self.z_op_eff
+            B_res = B_op_eff
 
         self.zD_res = self.z_res/self.D # normalised embedment
 
@@ -176,9 +196,10 @@ class PSI:
         PhaseNo = 7
         for model in self.Ax_model:
             if model < 10: # Undrained
-                [self.ff_ax_UD, self.x_ax] = PSI_frictionfcts.axial(model, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], self.int_SHANSEP_S, self.int_SHANSEP_m, [], self.z_hydro, B_hydro)
+                [self.ff_ax_UD, self.x_ax] = PSI_frictionfcts.axial(model, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], self.int_SHANSEP_S, self.int_SHANSEP_m, [], self.z_op_eff, B_op_eff)
+                # SHANSEP calc based on stresses at pipe invert based on full remoulding and consolidation under pipe weight so is not affected by berm presence; however the berm would have some effect in terms of the wedging factor increasing due to greater effective embedment which is captured here
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_ax_D, self.x_ax] = PSI_frictionfcts.axial(model, self.D, self.W_op, [], [], [], [], [], self.delta, self.z_hydro, B_hydro)
+                [self.ff_ax_D, self.x_ax] = PSI_frictionfcts.axial(model, self.D, self.W_op, [], [], [], [], [], self.delta, self.z_op_eff, B_op_eff)
             
         #print("UD Axial FF:", self.ff_ax_UD, "D Axial FF:", self.ff_ax_D, "Axial Mobilisation Displacements:", self.x_ax)
 

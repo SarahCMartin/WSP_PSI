@@ -1,9 +1,10 @@
-# PSI_montecarlo
+# Icthys_apply_berm_spanning
 
-"""This script runs Pipe-Soil Interaction Calculations for a defined number
-of randomly generated combinations of parameters with input distributions
-for each parameter. It is the alternative to PSI_inputs which runs the 
-PSI for a single parameter set."""
+"""This script applies effective embedment to capture berm development 
+and re-runs friction factor calculations. It also accounts for weight 
+increase & passive reduction to capture effect of spanning in lateral 
+friction factors. A number of components are hard-coded for fast 
+implementation, so it is initially applicable only to Ichthys Phase 2C."""
 
 ###########################################################################
 # Housekeeping
@@ -13,12 +14,23 @@ os.chdir(directory) # finding folder where this script is saved and setting as t
 d = {} # empty dictionary to take input parameters to add to PSI_case object in the initiation step
 
 ###########################################################################
-# Import inputs from excel file 'PSI_Inputs.xlsx' and select location to save results
+# Import inputs from selected json results filed, saved after original run of those parameters
 import Common
-(input_data, input_data_str, file_path) = Common.import_excel('Inputs')
+file_name = Common.import_json()
 
+import json
+
+if file_name: # Only save if user selected a file name
+    with open(file_name, 'r') as file:
+        compiled = json.load(file)
+else:
+    print("Results file not selected")
+
+###########################################################################
+# Select location to save results and figures from the new run
 from pathlib import Path
 parent_dir = Path(Common.select_folder())
+
 if parent_dir.name.lower() == "results":
     results_path = parent_dir
 else:
@@ -26,57 +38,49 @@ else:
     if not results_path.exists():
         results_path.mkdir()
 
-import time
-start = time.time() # Start timing after selection of the excel file to accurately reflect the monte carlo time which could be optimised
-
 ###########################################################################
-# Read Monte Carlo and Model Selection Parameters from Excel input file
-var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct', 'Berm', 'Spanning']
-d = {name: Common.find_var_value(input_data, input_data_str, name) for name in var_names} # dictionary containing constant parameters
+# Read Monte Carlo and Model Selection Parameters from selected json file
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct', 'Lat_brk_model', 'Lat_brk_weighting', 'Lat_res_model', 'Lat_res_weighting', 'Ax_model', 'No_cycles']
+d = {name: compiled[0]['inputs'][name] for name in var_names} # dictionary containing constant parameters (don't need to separate list inputs when reading from the json vs when reading from excel)
 
 # Handle special logic for z_su_inv
 if d['su_profile'] != 1:
     d['z_su_inv'] = []
 
-# Adding separately model inputs which can be in the form of a list
-list_names = ['Lat_brk_model', 'Lat_brk_weighting', 'Lat_res_model', 'Lat_res_weighting', 'Ax_model', 'No_cycles']
-d.update({name: Common.find_var_list(input_data, input_data_str, name) for name in list_names})
+###########################################################################
+# Generate distribution and associated random values for effective embedment ratio
+eff_emb_ratio = {}
+eff_emb_ratio = {'Parameter': 'Eff_emb_ratio', 'LE': 1.1, 'BE': 2, 'HE': 3, 'Min': 1, 'Distribution to Fit': 'automated fit'}
+random_eff_emb, _ = Common.generate_rolls(eff_emb_ratio, d['No_rolls'], results_path)
 
 ###########################################################################
-# Read Pipe, Soil and Interface Parameters from Excel input file
-column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Min', 'Distribution to Fit']
-data_type = [str, float, float, float, float, str] # corresponding to the headings in 'column headings'
-start_heading = 'Inputs Requiring Probabalistic Distribution Fitting' # below which the table to read from starts (including column headings)
+# Import flat seabed embedment from json file and apply correlation to the randomly generated effective embedment ratio
+flat_emb_results = {}
+out_names = ['z_hydro', 'zD_hydro', 'z_res', 'zD_res']
+for i in range(d['No_rolls']):
+    flat_emb_results = {name: compiled[i]['outputs'][name] for name in out_names}
+random_eff_emb.update({'z_hydro': flat_emb_results['z_hydro']})
 
-p = Common.read_columns(input_data, input_data_str, column_headings, data_type, start_heading) # dictionary containing variables which need to be allocated statistically
-p = Common.restructure_col_to_row(p, column_headings)
-
-###########################################################################
-# Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
-random_inputs, _ = Common.generate_rolls(p, d['No_rolls'], results_path)
-
-###########################################################################
-# Import correlations from excel then apply to the randomly generated variables
-(corr_data, corr_data_str, _) = Common.import_excel('Correlations', file_path)
-corr_headings = ['Parameter', 'Base Variable', 'Correlation Type', 'Correlation Index']
-corr_data_type = [str, str, str, float] # corresponding to the headings in 'column headings'
-
-corr = Common.read_columns(corr_data, corr_data_str, corr_headings, corr_data_type, None) # dictionary containing variables which need to be allocated statistically
-corr = Common.restructure_col_to_row(corr, corr_headings)
 import PSI_correlate
-random_inputs = PSI_correlate.apply_correlations(corr, random_inputs, results_path)
-random_inputs['z_ini'] = [float(x / 2) for x in random_inputs['D']]
+corr = {}
+corr = {'Parameter': 'Eff_emb_ratio', 'Base Variable': 'z_hydro', 'Correlation Type': 'Weakly Negative', 'Correlation Index': -0.6}
+random_eff_emb = PSI_correlate.apply_correlations(corr, random_eff_emb, results_path)
 
 ###########################################################################
 # Run PSI for prescribed number of parameter sets (rolls)
+# No_rolls = compiled[0]['inputs']['No_rolls']
 from PSI_class import PSI
 import PSI_soils
 results = []
 
 for i in range(d['No_rolls']):
     # Compile model parameters (fixed variables) with a set of pipe, soil and interface parameters for that roll (random probabilistic variables)
-    current_random = {k: v[i] for k, v in random_inputs.items()}
-    input_dict = {**d, **current_random}
+    input_dict = compiled[i]['inputs']
+    z_hydro_berm = compiled[i]['outputs']['z_hydro']*random_eff_emb['Eff_emb_ratio'][i]
+    zD_hydro_berm = z_hydro_berm/input_dict['D']
+    z_res_berm = compiled[i]['outputs']['z_res']*random_eff_emb['Eff_emb_ratio'][i]
+    zD_res_berm = z_res_berm/input_dict['D']
+
 
     # Run model for a given roll with the corresponding set of 1 of each parameters
     PSI_case = PSI(input_dict)
@@ -126,10 +130,6 @@ for entry in results:
 #         # Remove the original unsplit key
 #         del list_results[key]
 
-end = time.time()
-#print(list_results['z_aslaid'])
-print(f"Elapsed time: {end - start:.4f} seconds")
-
 ###########################################################################
 # Saving inputs and results
 os.chdir(results_path)
@@ -148,12 +148,7 @@ else:
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['zD_aslaid', 'zD_hydro', 'zD_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
 
-# base_cyclic_keys = ["ff_lat_berm", "ff_lat_cyc", "ff_ax_cyc"]
-# suffixes = ["", "_LE", "_BE", "_HE"]
-# possible_keys = {base + suf for base in base_cyclic_keys for suf in suffixes}
-# cyclic_keys = [k for k in list_results.keys() if k in possible_keys]
-cyclic_keys = ["ff_lat_berm", "ff_lat_cyc", "ff_ax_cyc"]
-
+cyclic_keys = ['ff_lat_berm', 'ff_lat_cyc', 'ff_ax_cyc']
 for key in cyclic_keys:
     list_of_lists = list_results[key]
     for n in d['No_cycles']:
@@ -161,9 +156,11 @@ for key in cyclic_keys:
         n_cycles_vals = [sublist[n-1] if len(sublist) > n-1 else None for sublist in list_of_lists]
         list_results[new_key] = n_cycles_vals
         to_fit_and_plot.append(new_key)
+        
+Output_dist = compiled[0]['inputs']['Output_dist']
+Model_fct = compiled[0]['inputs']['Model_fct']
+Common.process_results(list_results, Output_dist, to_fit_and_plot, results_path, Model_fct)
 
-Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, results_path, d['Model_fct'])
-
-Common.process_per_cycle(list_results, cyclic_keys, results_path, d['Model_fct'])
+Common.process_per_cycle(list_results, cyclic_keys, results_path, Model_fct)
 
 os.chdir(parent_dir)

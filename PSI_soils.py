@@ -1,7 +1,7 @@
 import Common
 import numpy as np
 
-def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_model, Emb_res_model, Ax_model, PhaseNo, D, su_profile, su_mudline, su_inv, z_su_inv, delta_su, St, z, prev_calc_depths, prev_su_inc):
+def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_model, Emb_res_model, Ax_model, PhaseNo, D, su_profile, su_mudline, su_inv, z_su_inv, delta_su, St, z, prev_calc_depths, prev_su_inc, berm_switch, eff_berm_height):
     """This function turns the input linear or bi-linear strength profile into
     incremental profile with corresponding depths and applies sensitivity to 
     reflect remoulding profiles as relevant."""
@@ -9,8 +9,10 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
     ###########################################################################
     # Constants, Fixed Inputs or Input Adjustments
     max_depth = Common.round_up(max(2*D,1),1) # considering calculation for a maximum depth of either 1m or 2D (below pipe invert if relevant, adjusted for in next step), whichever is greater, rounding up to the nearest 0.1m for subsequent increment definition
-    if PhaseNo == 1 or PhaseNo == 5: # profile to be used for as-laid embedment calculation and soil either side of pipe for lateral resistance, so needs to start from mudline
+    if PhaseNo == 1 or (PhaseNo == 5 and berm_switch == 0): # profile to be used for as-laid embedment calculation and soil either side of pipe for lateral resistance (without berm), so needs to start from mudline
         calc_depths = Common.float_range(0,max_depth,0.02) # making 0.02 m increments
+    elif PhaseNo == 5 and berm_switch == 1: # profile of soil either side of pipe for lateral resistance with berm
+        calc_depths = Common.float_range(-eff_berm_height,max_depth-eff_berm_height,0.02)
     else: # profile to be used for consolidation calculations at different stages
         calc_depths = Common.float_range(z,(max_depth+z),0.02)
 
@@ -22,7 +24,7 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
     ###########################################################################
     # Calculating in-situ undrained strength profile if any phases are modelled as undrained
     else: # soil modelled as undrained in at least 1 calculation stage so profiles need to be updated for consolidation throughout
-        if PhaseNo == 1 or PhaseNo == 2 or PhaseNo == 5: # profile to be used for as-laid embedment, consolidation calculation between pipe-lay and hydrotest, and material either side of pipe for lateral resistance
+        if PhaseNo == 1 or PhaseNo == 2 or (PhaseNo == 5 and berm_switch == 0): # profile to be used for as-laid embedment, consolidation calculation between pipe-lay and hydrotest, and material either side of pipe for lateral resistance (without berm)
             su_ini = [0]*len(calc_depths)
             for i in range(len(calc_depths)):
                 if su_profile == 1: # bi-linear su profile
@@ -32,6 +34,21 @@ def strength_profile(Emb_aslaid_model, Emb_hydro_model, Lat_brk_model, Lat_res_m
                         su_ini[i] = su_inv + delta_su*(calc_depths[i]-z_su_inv)
                 else: # linear su profile, can use delta_su throughout
                     su_ini[i] = su_mudline + delta_su*calc_depths[i]
+        
+        elif PhaseNo == 5 and berm_switch == 1: # profile of soil either side of pipe for lateral resistance with berm
+            su_ini = [0]*len(calc_depths)
+            for i in range(len(calc_depths)):
+                if calc_depths[i] <= 0: # berm portion of profile, assuming mudline properties in the absence of better information
+                    su_ini[i] = su_mudline
+                else: # in-situ soil
+                    if su_profile == 1: # bi-linear su profile
+                        if calc_depths[i] < z_su_inv: # interpolate strength for zone between mudline and strength profile inversion point
+                            su_ini[i] = ((su_inv - su_mudline)/z_su_inv)*calc_depths[i] + su_mudline
+                        else: # use delta_su for zone below strength profile inversion point
+                            su_ini[i] = su_inv + delta_su*(calc_depths[i]-z_su_inv)
+                    else: # linear su profile, can use delta_su throughout
+                        su_ini[i] = su_mudline + delta_su*calc_depths[i]
+
         elif PhaseNo == 4 or PhaseNo == 6: # profile to be used for consolidation calculation during hydrotest and between hydrotest and operation
             su_ini = Common.linear_extrapolate(calc_depths, prev_calc_depths, prev_su_inc)
 

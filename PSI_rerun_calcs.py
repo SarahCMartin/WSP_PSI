@@ -39,13 +39,22 @@ else:
         results_path.mkdir()
 
 ###########################################################################
+# Read Monte Carlo and Model Selection Parameters from selected json file
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct', 'Lat_brk_model', 'Lat_brk_weighting', 'Lat_res_model', 'Lat_res_weighting', 'Ax_model', 'No_cycles', 'Berm', 'Spanning']
+d = {name: compiled[0]['inputs'][name] for name in var_names} # dictionary containing constant parameters (don't need to separate list inputs when reading from the json vs when reading from excel)
+
+# Handle special logic for z_su_inv
+if d['su_profile'] != 1:
+    d['z_su_inv'] = []
+
+###########################################################################
 # Run PSI for prescribed number of parameter sets (rolls)
-No_rolls = compiled[0]['inputs']['No_rolls']
+# No_rolls = compiled[0]['inputs']['No_rolls']
 from PSI_class import PSI
 import PSI_soils
 results = []
 
-for i in range(No_rolls):
+for i in range(d['No_rolls']):
     # Compile model parameters (fixed variables) with a set of pipe, soil and interface parameters for that roll (random probabilistic variables)
     input_dict = compiled[i]['inputs']
 
@@ -74,28 +83,28 @@ for entry in results:
     for k, v in entry['outputs'].items():
         list_results.setdefault(k, []).append(v)
 
-suffix_map = {
-    2: ["LE", "HE"],
-    3: ["LE", "BE", "HE"],
-}
+# suffix_map = {
+#     2: ["LE", "HE"],
+#     3: ["LE", "BE", "HE"],
+# }
 
-for key, value in list(list_results.items()):
-    if (
-        isinstance(value, list)
-        and all(isinstance(i, list) for i in value)
-        and len(value) > 0
-        and all(len(i) == len(value[0]) for i in value) # consistent inner length
-        and len(value[0]) in suffix_map                 # only process 2 or 3 values because these are known to be LE-HE or LE-BE-HE, any other length >1 would be erroneous
-    ):
-        # Transpose the list of lists
-        transposed = list(map(list, zip(*value)))
+# for key, value in list(list_results.items()):
+#     if (
+#         isinstance(value, list)
+#         and all(isinstance(i, list) for i in value)
+#         and len(value) > 0
+#         and all(len(i) == len(value[0]) for i in value) # consistent inner length
+#         and len(value[0]) in suffix_map                 # only process 2 or 3 values because these are known to be LE-HE or LE-BE-HE, any other length >1 would be erroneous
+#     ):
+#         # Transpose the list of lists
+#         transposed = list(map(list, zip(*value)))
 
-        # Assign each column to a new key with a suffix
-        for i, suffix in enumerate(suffix_map[len(value[0])]):
-            list_results[f"{key}_{suffix}"] = transposed[i]
+#         # Assign each column to a new key with a suffix
+#         for i, suffix in enumerate(suffix_map[len(value[0])]):
+#             list_results[f"{key}_{suffix}"] = transposed[i]
 
-        # Remove the original unsplit key
-        del list_results[key]
+#         # Remove the original unsplit key
+#         del list_results[key]
 
 ###########################################################################
 # Saving inputs and results
