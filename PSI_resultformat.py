@@ -143,6 +143,16 @@ def hard_coded_headings(fig, ax, param_name):
         ax[0].set_xlabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
         ax[1].set_xlabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
 
+    elif param_name == 'eff_emb_ratio':
+        fig.suptitle("Ratio of Effective Embedment to Flat-Seabed Embedment", fontsize=14)
+        ax[0].set_xlabel(r"Ratio of Effective Embedment to Flat-Seabed Embedment, $z_{eff}/z$ (-)")
+        ax[1].set_xlabel(r"Ratio of Effective Embedment to Flat-Seabed Embedment, $z_{eff}/z$ (-)")
+
+    elif param_name == 'span_ratio':
+        fig.suptitle("Span Ratio Over 100 m Gauge Length", fontsize=14)
+        ax[0].set_xlabel("Span Ratio Over 100 m Gauge Length, SR (-)")
+        ax[1].set_xlabel("Span Ratio Over 100 m Gauge Length, SR (-)")
+
     ###########################################################################
     # Outputs
     elif param_name == 'z_aslaid':
@@ -164,6 +174,16 @@ def hard_coded_headings(fig, ax, param_name):
         fig.suptitle("Normalised Hydrotest Embedment - Results", fontsize=14)
         ax[0].set_xlabel(r"Normalised Hydrotest Embedment, $z_{hydro}/D$ (-)")
         ax[1].set_xlabel(r"Normalised Hydrotest Embedment, $z_{hydro}/D$ (-)")
+
+    elif param_name == 'z_op_eff':
+        fig.suptitle("Effective Embedment at Start of Operation - Results", fontsize=14)
+        ax[0].set_xlabel(r"Effective Embedment, $z_{{op,eff}}$ (m)")
+        ax[1].set_xlabel(r"Effective Embedment, $z_{{op,eff}}$ (m)")
+            
+    elif param_name == 'zD_op_eff':
+        fig.suptitle("Normalised Effective Embedment at Start of Operation - Results", fontsize=14)
+        ax[0].set_xlabel(r"Normalised Effective Embedment, $z_{{op,eff}}/D$ (-)")
+        ax[1].set_xlabel(r"Normalised Effective Embedment, $z_{{op,eff}}/D$ (-)")
 
     elif param_name == 'z_res':
         fig.suptitle("Residual (post-breakout) Embedment - Results", fontsize=14)
@@ -294,7 +314,10 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_xlabel(r"SHANSEP m for Soil-Interface, $m_{int}$ (-)")
     elif name_base_var == 'delta':
         ax.set_xlabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
-
+    elif name_base_var == 'eff_emb_ratio':
+        ax.set_xlabel(r"Ratio of Effective Embedment to Flat-Seabed Embedment, $z_{eff}/z$ (-)")
+    elif name_base_var == 'span_ratio':
+        ax.set_xlabel("Span Ratio Over 100 m Gauge Length, SR (-)")
     
     ###########################################################################
     # Vertical Axis - changing variable
@@ -351,6 +374,10 @@ def hard_coded_corr_headings(ax, name_base_var, name_changing_var):
         ax.set_ylabel(r"SHANSEP m for Soil-Interface, $m_{int}$ (-)")
     elif name_changing_var == 'delta':
         ax.set_ylabel(r"Friction Angle for Soil-Interface, $\delta$ ($^\circ$)")
+    elif name_changing_var == 'eff_emb_ratio':
+        ax.set_ylabel(r"Ratio of Effective Embedment to Flat-Seabed Embedment, $z_{eff}/z$ (-)")
+    elif name_changing_var == 'span_ratio':
+        ax.set_ylabel("Span Ratio Over 100 m Gauge Length, SR (-)")
 
 
 def hard_coded_cyc_headings(ax, param_name):
@@ -428,6 +455,10 @@ def hard_coded_caption(param_name):
         param_string = r"SHANSEP m for Soil-Interface, $m_{int}$"
     elif param_name == 'delta':
         param_string = r"Friction Angle for Soil-Interface, $\delta$"
+    elif param_name == 'eff_emb_ratio':
+        param_string = r"Ratio of Effective Embedment to Flat-Seabed Embedment, $z_{eff}/z$ (-)"
+    elif param_name == 'span_ratio':
+        param_string = "Span Ratio Over 100 m Gauge Length, SR (-)"
 
     ###########################################################################
     # Outputs
@@ -439,6 +470,10 @@ def hard_coded_caption(param_name):
         param_string = r"Hydrotest Embedment, $z_{hydro}$"
     elif param_name == 'zD_hydro':
         param_string = r"Normalised Hydrotest Embedment, $z_{hydro}/D$"
+    elif param_name == 'z_op_eff':
+        param_string = r"Effective Embedment, $z_{{op,eff}}$ (m)"
+    elif param_name == 'zD_op_eff':
+        param_string = r"Normalised Effective Embedment, $z_{{op,eff}}/D$ (-)"
     elif param_name == 'z_res':
         param_string = r"Residual Embedment, $z_{res}$"
     elif param_name == 'zD_res':
@@ -466,7 +501,7 @@ def hard_coded_units(param_name):
     if param_name == None:
         unit = '(-)'
     
-    elif param_name == 'D' or param_name == 't' or param_name == 'z_aslaid' or param_name == 'z_hydro' or param_name == 'z_res':
+    elif param_name == 'D' or param_name == 't' or param_name == 'z_aslaid' or param_name == 'z_hydro' or param_name == 'z_op_eff' or param_name == 'z_res':
         unit = '(m)'
     elif param_name == 'W_empty' or param_name == 'W_hydro' or param_name == 'W_op':
         unit = '(kN/m)'

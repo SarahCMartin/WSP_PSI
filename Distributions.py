@@ -283,7 +283,7 @@ def fit_best_distribution_cdf(data):
     Enforces positive shape/scale and loc >= 0. Returns optimised parameters."""
 
     # All distributions available excluding uniform as inputs where this is the appropriate choice should be known and defined as such manually
-    candidates = ['Normal', 'Log-normal', 'Weibull', 'Gamma', 'Rayleigh']
+    candidates = ['Uniform', 'Normal', 'Log-normal', 'Weibull', 'Gamma', 'Rayleigh']
 
     best_dist = None
     best_params = None
