@@ -121,14 +121,22 @@ class PSI:
 
         else: # self.Berm == 1, berm applied
             self.z_op_eff = self.z_hydro*self.eff_emb_ratio
-            if self.z_op_eff > self.D: # capping the effective embedment at D or z_hydro as additional berm will not accumulate once pipe fully embedded but such cases could occur for certain combinations of random inputs
-                self.z_op_eff = max(self.D, self.z_hydro)
+            # if self.z_op_eff > self.D: # capping the effective embedment at D or z_hydro as additional berm will not accumulate once pipe fully embedded but such cases could occur for certain combinations of random inputs
+            #     self.z_op_eff = max(self.D, self.z_hydro)
             self.zD_op_eff = self.z_op_eff/self.D # normalised effective embedment
+            # self.zD_op_eff = max(self.zD_hydro, 0.188034*self.zD_hydro**2+0.534188*self.zD_hydro+0.272821)
+            # self.z_op_eff = self.zD_op_eff*self.D
 
         eff_berm_height = self.z_op_eff - self.z_hydro
-        [B_op_eff,_] = PSI_embedment.emb_geometry(self.z_op_eff, self.D)
-
-        op_calc_depths = hydro_calc_depths + eff_berm_height # adjusting depths so previously calculated consolidated strength at pipe invert will still be applied corrently even if z_op_eff != z_hydro as berm is not being considered to cause additional consolidation
+        if eff_berm_height == 0: # no berm or berm height 0
+            B_op_eff = B_hydro
+            op_calc_depths = hydro_calc_depths
+        else:
+            [B_op_eff,_] = PSI_embedment.emb_geometry(self.z_op_eff, self.D)
+            op_calc_depths = hydro_calc_depths + eff_berm_height # adjusting depths so previously calculated consolidated strength at pipe invert will still be applied corrently even if z_op_eff != z_hydro as berm is not being considered to cause additional consolidation
+        
+        if self.span_ratio > 1: # applying limit to span ratio to avoid errors as currently only minimum is defined as part of inputs; negligible points should fall above this
+            self.span_ratio = 1
 
         ###########################################################################
         # Lateral Breakout Resistance
@@ -141,9 +149,9 @@ class PSI:
         ff_lat_brk_UD_temp = {}
         for model in self.Lat_brk_model:
             if model < 10: # Undrained
-                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, op_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_op_eff, B_op_eff)
+                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, op_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_op_eff, B_op_eff, self.Spanning, self.span_ratio, self.coeff_fenhance)
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_op_eff, B_op_eff)
+                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_op_eff, B_op_eff, self.Spanning, self.span_ratio, self.coeff_fenhance)
         
         if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_brk_UD_temp.keys()):
             self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_op_eff, self.D)
@@ -217,14 +225,14 @@ class PSI:
             # Capping lateral berm FF using drained lateral breakout at z = D embedment; this may under-estimate the peak height of the berm but it will also not be functioning as a standard passive triangle like if the pipe were fully covered
             z_cap = self.D
             B_cap = PSI_embedment.emb_geometry(z_cap, self.D)
-            [lat_berm_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap)
+            [lat_berm_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap, 0, [], [])
             self.ff_lat_berm = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_berm_cap, self.No_cycles)
 
             # Lateral Mid-Sweep
             # Capping lateral mid-sweep FF using drained lateral breakout at z = 0 embedment to remove passive component
             z_cap = 0
             B_cap = 0
-            [lat_mid_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap)
+            [lat_mid_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap, 0, [], [])
             self.ff_lat_cyc = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_mid_cap, self.No_cycles)
 
             # Axial

@@ -465,7 +465,9 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
 
         # Adding histogram of the randomly generated inputs / calculated results from those inputs to visually confirm they correspond to the function
         if samples is not None and len(samples) > 0:
-            ax[1].hist(samples, bins=100, density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
+            visible_min = max(0, x_vals[0])
+            visible_max = x_vals[-1]
+            ax[1].hist(samples, bins=100, range=(visible_min, visible_max), density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
 
     # Set y-limits for plots
     ax[0].set_ylim(0, 1.05)  # CDF always between 0–1

@@ -305,7 +305,7 @@ def embedment_with_horz_force(PhaseNo, z0, D, calc_depths, su_inc, lat_su_inc, g
     import PSI_frictionfcts
     z_track = [z0] # taking undistrubed BC value as starting embedment unless it is very small, and therefore likely to cause errors by the envelope being negligibly small
     # Taking horizontal strength profile as disturbed by St (not St_pipelay) and vertical as undistrubed, though it may in part be depending on the motion of the pipe during breakout
-    ff, V_at_Hmax = PSI_frictionfcts.latbrk(PhaseNo, 2, [], D, W, alpha, [], [], calc_depths, [], lat_su_inc, calc_depths, su_inc, gamma_sub, [], [], [], [], [], z0, [])
+    ff, V_at_Hmax = PSI_frictionfcts.latbrk(PhaseNo, 2, [], D, W, alpha, [], [], calc_depths, [], lat_su_inc, calc_depths, su_inc, gamma_sub, [], [], [], [], [], z0, [], 0, [], [])
     V_track = [V_at_Hmax]
 
     if abs(V_at_Hmax - W) < 0.001: # prevents error if initial guess for z gives result within target tolerance
@@ -346,7 +346,7 @@ def embedment_with_horz_force(PhaseNo, z0, D, calc_depths, su_inc, lat_su_inc, g
         
         ###########################################################################
         # Calculate F and Hmax corresponding to new value of embedment, z (m)
-        ff, V_at_Hmax = PSI_frictionfcts.latbrk(PhaseNo, 2, [], D, W, alpha, [], [], calc_depths, [], lat_su_inc, calc_depths, su_inc, gamma_sub, [], [], [], [], [], z, [])
+        ff, V_at_Hmax = PSI_frictionfcts.latbrk(PhaseNo, 2, [], D, W, alpha, [], [], calc_depths, [], lat_su_inc, calc_depths, su_inc, gamma_sub, [], [], [], [], [], z, [], 0, [], [])
         V_track += [V_at_Hmax]
         z_track += [z]
 
