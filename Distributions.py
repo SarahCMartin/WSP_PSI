@@ -158,6 +158,63 @@ def fit_lognormal_to_percentiles(LE, BE, HE, Min):
     return s_opt, loc_opt, scale_opt
 
 
+def fit_lognormal_to_percentiles_truncated(LE, BE, HE, Min, Max):
+    """Fit a truncated log-normal distribution to match the 5th, 
+    50th, and 95th percentiles within limits Min and Max.
+    Returns estimated s, loc and scale."""
+
+    min_value = 0 if np.isnan(Min) else Min
+    if np.isnan(Max) or np.isposinf(Max):
+        s_opt, loc_opt, scale_opt = fit_lognormal_to_percentiles(LE, BE, HE, Min)
+        return s_opt, loc_opt, scale_opt
+    if not (Min < Max):
+        raise ValueError("Min must be < Max")
+    
+    # Target percentiles (5%, 50%, 95%; adjusted to make sure they sit above Min)
+    eps = 1e-12
+    LE = max(LE, Min + eps)
+    BE = max(BE, Min + eps)
+    HE = max(HE, Min + eps)
+    target_percentiles = [LE, BE, HE]
+    probs = [0.05, 0.5, 0.95]
+
+    # Truncated quantile on [Min, Max] for SciPy lognorm
+    def ppf_truncated(p, s, loc, scale):
+        FL = lognorm.cdf(Min, s=s, loc=loc, scale=scale)
+        FU = lognorm.cdf(Max, s=s, loc=loc, scale=scale)
+        Z  = FU - FL
+        if not np.isfinite(Z) or Z <= 0:
+            return np.full_like(np.asarray(p, dtype=float), np.nan)
+        return lognorm.ppf(FL + np.asarray(p) * Z, s=s, loc=loc, scale=scale)
+
+    # Objective function: sum of squared differences between target and candidate percentiles
+    def objective(params):
+        s, loc, scale = params
+        predicted = ppf_truncated(probs, s=s, loc=loc, scale=scale)
+        if np.any(~np.isfinite(predicted)):
+            return 1e50
+        # return np.sum((np.array(predicted) - np.array(target_percentiles))**2)
+        # Trying weighting to increase smoothness at the low end of fittings by getting a better fit to the tail
+        weights = np.linspace(2.0, 0.5, len(target_percentiles))
+        return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
+
+    # Initial guess 
+    z5, z95 = truncnorm.ppf(0.05), truncnorm.ppf(0.95)
+    denom = (z95 - z5) if (z95 - z5) > 0 else 3.2905 # Note hard coded back-up of 3.2905 suggested by co-pilot; not substanitally different from 4 used in non-truncated version
+    sigma_guess = max((np.log(HE - Min + eps) - np.log(LE - Min + eps)) / denom, 1e-3)
+    scale_guess = max(BE - min_value, 1e-6)
+
+    initial_guess = [sigma_guess, min_value, scale_guess]
+
+    # Minimise the objective
+    result = minimize(objective, initial_guess, bounds=[(1e-6, None), (min_value, None), (1e-6, None)], method='L-BFGS-B')
+    if not result.success:
+        raise RuntimeError(f"Truncated lognormal fit failed: {result.message}")
+
+    s_opt, loc_opt, scale_opt = result.x
+    return s_opt, loc_opt, scale_opt
+
+
 def fit_weibull_to_percentiles(LE, BE, HE, Min):
     """Fit a weibull distribution to match the 5th, 50th, and 95th percentiles.
     Returns estimated c, loc and scale."""
@@ -450,9 +507,9 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
         pdf = fitted_dist.pdf(x_vals)
 
         # Plotting
-        if type == 'input': # not plotting fitted distribution for outputs as percentiles are now based on actual data and it distracts from the final figure
-            ax[0].plot(x_vals, cdf, 'r-', label=f'{dist_name.title()} CDF')
-            ax[1].plot(x_vals, pdf, 'r-', label=f'{dist_name.title()} PDF')
+        # if type == 'input': # not plotting fitted distribution for outputs as percentiles are now based on actual data and it distracts from the final figure
+        ax[0].plot(x_vals, cdf, 'r-', label=f'{dist_name.title()} CDF')
+        ax[1].plot(x_vals, pdf, 'r-', label=f'{dist_name.title()} PDF')
         
         # Defining PDF axis label here as it is different for the degenerative case vs others
         ax[1].set_ylabel("Density")
@@ -478,6 +535,14 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
             elif type == 'output':
                 ax[0].scatter(x, probs, color='blue', label='Output Percentiles')
                 ax[1].vlines(x, ymin=0, ymax=ymax, color='blue', linestyles='--', label='Output Percentiles')
+                if dist == lognorm:
+                    s, loc, scale = params
+                    # calculating outputs to include on Figures for lognormal fit, requested by McDermott
+                    mean = loc + scale * np.exp(0.5 * s**2)
+                    var  = (scale**2) * (np.exp(s**2) - 1.0) * np.exp(s**2)
+                    std  = np.sqrt(var)
+                    text = f"Mean, $\mu_{{\\mathrm{{lognorm}}}}$ = {mean:.2f}\nSD, $\sigma_{{\\mathrm{{lognorm}}}}$ = {std:.2f}"
+                    ax[0].text(0.04, 0.96, text, transform=ax[0].transAxes, fontsize=10, fontweight='bold', ha='left', va='top', multialignment='left')
 
     # Set y-limits for plots
     ax[0].set_ylim(0, 1.05)  # CDF always between 0–1
@@ -488,12 +553,12 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     #ax[0].set_xlabel("Value")
     ax[0].set_ylabel("Probability")
     ax[0].set_xlim([max(0,x_vals[0]), x_vals[-1]])
-    ax[0].legend()
+    ax[0].legend(loc='lower right')
 
     ax[1].set_title("Probability Density Function")
     #ax[1].set_xlabel("Value")
     ax[1].set_xlim([max(0,x_vals[0]), x_vals[-1]])
-    ax[1].legend()
+    ax[1].legend(loc='upper right')
     
     PSI_resultformat.hard_coded_headings(fig, ax, param_name)
     #plt.show()
@@ -515,8 +580,8 @@ def get_plot_bounds(x, pad_fraction=0.5, default_pad=0.05):
         return x_min - pad, x_max + pad
     else:
         pad = (x_max - x_min)*pad_fraction
-        plot_min = x_min-pad
-        plot_max = x_max+pad
+        plot_min = x_min-(0.5*pad)
+        plot_max = x_max+(1.5*pad)
         return plot_min, plot_max
     
 
