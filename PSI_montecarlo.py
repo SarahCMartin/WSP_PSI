@@ -26,6 +26,13 @@ else:
     if not results_path.exists():
         results_path.mkdir()
 
+input_fig_path = results_path / 'Inputs'
+if not input_fig_path.exists():
+    input_fig_path.mkdir()
+output_fig_path = results_path / 'Outputs'
+if not output_fig_path.exists():
+    output_fig_path.mkdir()
+
 import time
 start = time.time() # Start timing after selection of the excel file to accurately reflect the monte carlo time which could be optimised
 
@@ -44,8 +51,8 @@ d.update({name: Common.find_var_list(input_data, input_data_str, name) for name 
 
 ###########################################################################
 # Read Pipe, Soil and Interface Parameters from Excel input file
-column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Min', 'Distribution to Fit']
-data_type = [str, float, float, float, float, str] # corresponding to the headings in 'column headings'
+column_headings = ['Parameter', 'LE', 'BE', 'HE', 'Min', 'Max', 'Distribution to Fit']
+data_type = [str, float, float, float, float, float, str] # corresponding to the headings in 'column headings'
 start_heading = 'Inputs Requiring Probabalistic Distribution Fitting' # below which the table to read from starts (including column headings)
 
 p = Common.read_columns(input_data, input_data_str, column_headings, data_type, start_heading) # dictionary containing variables which need to be allocated statistically
@@ -55,7 +62,7 @@ p = Common.restructure_col_to_row(p, column_headings)
 # Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
 import numpy as np
 rng = np.random.default_rng(1) # seeding the random variables to be reproducable but need to do outside of the loop for counter not to reset (which results in perfectly correlated variables)
-random_inputs, _ = Common.generate_rolls(p, d['No_rolls'], rng, results_path)
+random_inputs, _ = Common.generate_rolls(p, d['No_rolls'], rng, input_fig_path)
 
 ###########################################################################
 # Import correlations from excel then apply to the randomly generated variables
@@ -66,7 +73,7 @@ corr_data_type = [str, str, str, float] # corresponding to the headings in 'colu
 corr = Common.read_columns(corr_data, corr_data_str, corr_headings, corr_data_type, None) # dictionary containing variables which need to be allocated statistically
 corr = Common.restructure_col_to_row(corr, corr_headings)
 import PSI_correlate
-random_inputs = PSI_correlate.apply_correlations(corr, random_inputs, results_path)
+random_inputs = PSI_correlate.apply_correlations(corr, random_inputs, input_fig_path)
 random_inputs['z_ini'] = [float(x / 2) for x in random_inputs['D']]
 
 ###########################################################################
@@ -164,8 +171,8 @@ for key in cyclic_keys:
         list_results[new_key] = n_cycles_vals
         to_fit_and_plot.append(new_key)
 
-Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, results_path, d['Model_fct'])
+Common.process_results(list_results, d['Output_dist'], to_fit_and_plot, output_fig_path, d['Model_fct'])
 
-Common.process_per_cycle(list_results, cyclic_keys, results_path, d['Model_fct'])
+Common.process_per_cycle(list_results, cyclic_keys, output_fig_path, d['Model_fct'])
 
 os.chdir(parent_dir)

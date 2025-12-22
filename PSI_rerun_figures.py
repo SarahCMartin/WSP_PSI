@@ -35,6 +35,10 @@ else:
     if not results_path.exists():
         results_path.mkdir()
 
+output_fig_path = results_path / 'Outputs'
+if not output_fig_path.exists():
+    output_fig_path.mkdir()
+
 ###########################################################################
 # Converting to lists of each variable to be easier to plot outputs
 list_inputs = {}
@@ -84,8 +88,8 @@ for key in cyclic_keys:
 
 Output_dist = results[0]['inputs']['Output_dist']
 Model_fct = results[0]['inputs']['Model_fct']
-Common.process_results(list_results, Output_dist, to_fit_and_plot, results_path, Model_fct)
+Common.process_results(list_results, Output_dist, to_fit_and_plot, output_fig_path, Model_fct)
 
-Common.process_per_cycle(list_results, cyclic_keys, results_path, Model_fct)
+Common.process_per_cycle(list_results, cyclic_keys, output_fig_path, Model_fct)
 
 os.chdir(parent_dir)

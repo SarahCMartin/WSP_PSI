@@ -38,6 +38,10 @@ else:
     if not results_path.exists():
         results_path.mkdir()
 
+output_fig_path = results_path / 'Outputs'
+if not output_fig_path.exists():
+    output_fig_path.mkdir()
+
 ###########################################################################
 # Read Monte Carlo and Model Selection Parameters from selected json file
 var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct', 'Lat_brk_model', 'Lat_brk_weighting', 'Lat_res_model', 'Lat_res_weighting', 'Ax_model', 'No_cycles', 'Berm', 'Spanning']
@@ -135,8 +139,8 @@ for key in cyclic_keys:
         
 Output_dist = compiled[0]['inputs']['Output_dist']
 Model_fct = compiled[0]['inputs']['Model_fct']
-Common.process_results(list_results, Output_dist, to_fit_and_plot, results_path, Model_fct)
+Common.process_results(list_results, Output_dist, to_fit_and_plot, output_fig_path, Model_fct)
 
-Common.process_per_cycle(list_results, cyclic_keys, results_path, Model_fct)
+Common.process_per_cycle(list_results, cyclic_keys, output_fig_path, Model_fct)
 
 os.chdir(parent_dir)
