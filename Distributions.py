@@ -404,7 +404,7 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     # probs = np.array(percentiles)
 
     # Create x-range for plotting
-    if x_percentiles is not None: # plotting distribution for inputs
+    if x_percentiles is not None:
         x = np.array(x_percentiles)
         probs = np.array(percentiles)
         x_min, x_max = get_plot_bounds(x)
@@ -441,6 +441,8 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
             # Setting width and height arbirtarily for visualisation purposes
             ax[1].hist(samples, bins=bins, alpha=0.5, density=True, color='gray', label='Histogram of Random Values')
 
+        ymax = 1.1 * pdf.max() if np.any(pdf > 0) else 1
+
     else:
         # Compute CDF and PDF
         fitted_dist = dist(*params)
@@ -448,30 +450,38 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
         pdf = fitted_dist.pdf(x_vals)
 
         # Plotting
-        ax[0].plot(x_vals, cdf, 'r-', label=f'{dist_name.title()} CDF')
-        ax[1].plot(x_vals, pdf, 'r-', label=f'{dist_name.title()} PDF')
+        if type == 'input': # not plotting fitted distribution for outputs as percentiles are now based on actual data and it distracts from the final figure
+            ax[0].plot(x_vals, cdf, 'r-', label=f'{dist_name.title()} CDF')
+            ax[1].plot(x_vals, pdf, 'r-', label=f'{dist_name.title()} PDF')
         
-        # Adding input percentiles for input fitting, not relevant for results fitting
+        # Defining PDF axis label here as it is different for the degenerative case vs others
+        ax[1].set_ylabel("Density")
+
+        # Adding histogram of the randomly generated inputs / calculated results from those inputs to visually confirm they correspond to the function; also plotting empirical CDF of calculated results for outputs
+        if samples is not None and len(samples) > 0:
+            visible_min = max(0, x_vals[0])
+            visible_max = x_vals[-1]
+            counts, bin, patches = ax[1].hist(samples, bins=100, range=(visible_min, visible_max), density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
+
+            if type == 'output':
+                ax[0].step(np.sort(samples), np.arange(1, len(samples)+1)/len(samples), where='post', color='gray', alpha=0.5, label='Empirical CDF of Actual Values')
+        
+        ymax_dist = 1.1 * pdf.max() if np.any(pdf > 0) else 1
+        ymax_data = 1.1 * counts.max()
+        ymax = max(ymax_dist, ymax_data)
+        
+        # Adding input/results percentiles to plot
         if x is not None and len(x) > 0:
             if type == 'input':
                 ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
                 ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
             elif type == 'output':
                 ax[0].scatter(x, probs, color='blue', label='Output Percentiles')
-                ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Output Percentiles')
-
-        # Defining PDF axis label here as it is different for the degenerative case vs others
-        ax[1].set_ylabel("Density")
-
-        # Adding histogram of the randomly generated inputs / calculated results from those inputs to visually confirm they correspond to the function
-        if samples is not None and len(samples) > 0:
-            visible_min = max(0, x_vals[0])
-            visible_max = x_vals[-1]
-            ax[1].hist(samples, bins=100, range=(visible_min, visible_max), density=True, alpha=0.5, color='gray', label='Histogram of Actual Values')
+                ax[1].vlines(x, ymin=0, ymax=ymax, color='blue', linestyles='--', label='Output Percentiles')
 
     # Set y-limits for plots
     ax[0].set_ylim(0, 1.05)  # CDF always between 0–1
-    ax[1].set_ylim(0, 1.1 * pdf.max() if np.any(pdf > 0) else 1)  # PDF adaptive
+    ax[1].set_ylim(0, ymax)  # PDF adaptive
 
     # Setting other aesthetic details for plots
     ax[0].set_title("Cumulative Distribution Function")

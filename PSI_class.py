@@ -69,7 +69,11 @@ class PSI:
         ###########################################################################
         # Hydrotest Embedment
         PhaseNo = 3
-        [self.z_hydro, B_hydro] = PSI_embedment.embedment(PhaseNo, self.Emb_hydro_model, self.D, self.W_hydro, self.alpha, [], [], self.z_aslaid, self.gamma_sub, postlay_calc_depths, su_consol_postlay, [], self.phi)
+        if self.W_hydro == self.W_empty: # only the case when calculating as-laid friction factors
+            self.z_hydro = self.z_aslaid
+            B_hydro = B_aslaid
+        else:
+            [self.z_hydro, B_hydro] = PSI_embedment.embedment(PhaseNo, self.Emb_hydro_model, self.D, self.W_hydro, self.alpha, [], [], self.z_aslaid, self.gamma_sub, postlay_calc_depths, su_consol_postlay, [], self.phi)
         #print("Hydrotest Embedment:", self.z_hydro)
         self.zD_hydro = self.z_hydro/self.D # normalised embedment
 
@@ -149,9 +153,9 @@ class PSI:
         ff_lat_brk_UD_temp = {}
         for model in self.Lat_brk_model:
             if model < 10: # Undrained
-                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, op_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_op_eff, B_op_eff, self.Spanning, self.span_ratio, self.coeff_fenhance)
+                [ff_lat_brk_UD_temp[model], self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, self.Lat_brk_suction, self.D, self.W_op, self.alpha, int_vert_eff_max, int_vert_eff_preop[0], insitu_calc_depths, insitu_su_inc, lat_su_inc, op_calc_depths, su_consol_preop, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_op_eff, B_op_eff, self.Spanning, self.span_ratio, self.coeff_fenhance)
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, self.z_op_eff, B_op_eff, self.Spanning, self.span_ratio, self.coeff_fenhance)
+                [self.ff_lat_brk_D, self.y_lat_brk] = PSI_frictionfcts.latbrk(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.phi, self.delta, self.z_op_eff, B_op_eff, self.Spanning, self.span_ratio, self.coeff_fenhance)
         
         if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_brk_UD_temp.keys()):
             self.ff_lat_brk_UD = apply_weighting(self.Lat_brk_weighting, ff_lat_brk_UD_temp, self.z_op_eff, self.D)
@@ -187,12 +191,12 @@ class PSI:
                     # print(int_yield_stress_res, int_vert_eff_res)
 
                     # Max previous for subsequent SHANSEP calc will come from int_yield_stress_res[0] as strength will be defined by the past load history rather than loading phases applied during installation, hydrotest, etc.
-                [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], self.z_hydro, self.z_res, B_res)
+                [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_hydro, self.z_res, B_res)
                 # else: 
                 #     [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, [], [], [], self.z_hydro, self.z_res, B_res)
         
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, [], self.z_res, [])
+                [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.phi, self.delta, [], self.z_res, [])
         
         if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_res_UD_temp.keys()):
             self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp, self.z_res, self.D)
@@ -225,14 +229,14 @@ class PSI:
             # Capping lateral berm FF using drained lateral breakout at z = D embedment; this may under-estimate the peak height of the berm but it will also not be functioning as a standard passive triangle like if the pipe were fully covered
             z_cap = self.D
             B_cap = PSI_embedment.emb_geometry(z_cap, self.D)
-            [lat_berm_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap, 0, [], [])
+            [lat_berm_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.phi, self.delta, z_cap, B_cap, 0, [], [])
             self.ff_lat_berm = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_berm_cap, self.No_cycles)
 
             # Lateral Mid-Sweep
             # Capping lateral mid-sweep FF using drained lateral breakout at z = 0 embedment to remove passive component
             z_cap = 0
             B_cap = 0
-            [lat_mid_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.delta, z_cap, B_cap, 0, [], [])
+            [lat_mid_cap, _] = PSI_frictionfcts.latbrk(PhaseNo, 10, [], self.D, self.W_op, [], [], [], [], [], [], [], [], self.gamma_sub, [], [], [], [], self.phi, self.delta, z_cap, B_cap, 0, [], [])
             self.ff_lat_cyc = PSI_frictionfcts.cyc_transition(self.N50, self.ff_lat_res_UD, lat_mid_cap, self.No_cycles)
 
             # Axial

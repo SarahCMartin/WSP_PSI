@@ -53,7 +53,9 @@ p = Common.restructure_col_to_row(p, column_headings)
 
 ###########################################################################
 # Generate values for each dice roll according to best fit probability distributions for pipe, soil and interface parameters
-random_inputs, _ = Common.generate_rolls(p, d['No_rolls'], results_path)
+import numpy as np
+rng = np.random.default_rng(1) # seeding the random variables to be reproducable but need to do outside of the loop for counter not to reset (which results in perfectly correlated variables)
+random_inputs, _ = Common.generate_rolls(p, d['No_rolls'], rng, results_path)
 
 ###########################################################################
 # Import correlations from excel then apply to the randomly generated variables
