@@ -206,6 +206,7 @@ def generate_rolls(d, No_rolls, rng, results_path=None):
         BE = info["BE"]
         HE = info["HE"]
         Min = info["Min"]
+        Max = info["Max"]
         dist = info["Distribution to Fit"].lower()
 
         if dist == 'uniform':
@@ -232,6 +233,16 @@ def generate_rolls(d, No_rolls, rng, results_path=None):
             rolls[name] = lognorm.rvs(s=s, loc=loc, scale=scale, size=No_rolls, random_state=rng)
             Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], param_name=name, dist_name='Log-normal', results_path=results_path, type='input')
 
+        elif dist == 'truncated log-normal':
+            if np.isnan(Max) or np.isposinf(Max): # only use truncated version if there is a defined maximum
+                s, loc, scale = Distributions.fit_lognormal_to_percentiles(LE, BE, HE, Min)
+            else:
+                s, loc, scale = Distributions.fit_lognormal_to_percentiles_truncated(LE, BE, HE, Min, Max)
+            
+            fit_info[name] = [dist, (s,loc,scale)]
+            rolls[name] = Distributions.sample_truncated_lognorm(s, loc, scale, Min, Max, No_rolls, rng) # no inbuilt function for truncated log-normal
+            Distributions.plot_distribution_fit([LE, BE, HE], [0.05, 0.5, 0.95], lognorm, (s, loc, scale), samples=rolls[name], param_name=name, dist_name='Truncated Log-normal', results_path=results_path, type='input', truncation=(Min, Max))
+       
         elif dist == 'weibull':
             c, loc, scale = Distributions.fit_weibull_to_percentiles(LE, BE, HE, Min)
             fit_info[name] = [dist, (c,loc,scale)]

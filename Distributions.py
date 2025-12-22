@@ -164,9 +164,6 @@ def fit_lognormal_to_percentiles_truncated(LE, BE, HE, Min, Max):
     Returns estimated s, loc and scale."""
 
     min_value = 0 if np.isnan(Min) else Min
-    if np.isnan(Max) or np.isposinf(Max):
-        s_opt, loc_opt, scale_opt = fit_lognormal_to_percentiles(LE, BE, HE, Min)
-        return s_opt, loc_opt, scale_opt
     if not (Min < Max):
         raise ValueError("Min must be < Max")
     
@@ -199,9 +196,7 @@ def fit_lognormal_to_percentiles_truncated(LE, BE, HE, Min, Max):
         return np.sum(weights * (np.array(predicted) - np.array(target_percentiles)) ** 2)
 
     # Initial guess 
-    z5, z95 = truncnorm.ppf(0.05), truncnorm.ppf(0.95)
-    denom = (z95 - z5) if (z95 - z5) > 0 else 3.2905 # Note hard coded back-up of 3.2905 suggested by co-pilot; not substanitally different from 4 used in non-truncated version
-    sigma_guess = max((np.log(HE - Min + eps) - np.log(LE - Min + eps)) / denom, 1e-3)
+    sigma_guess = max((np.log(HE - Min + eps) - np.log(LE - Min + eps)) / 3.2, 1e-3) # 3.2 suggested by Copilot, similar to 4 for regular log-normal above
     scale_guess = max(BE - min_value, 1e-6)
 
     initial_guess = [sigma_guess, min_value, scale_guess]
@@ -440,9 +435,16 @@ def fit_distribution_cdf(data, dist_name, return_error=False):
         return opt_params, final_error # returns optimised parameters and associated error
     else:
         return opt_params # returns optimised parameters only
+    
+
+def sample_truncated_lognorm(s, loc, scale, Min, Max, size, rng):
+    FL = lognorm.cdf(Min, s=s, loc=loc, scale=scale)
+    FU = lognorm.cdf(Max, s=s, loc=loc, scale=scale)
+    u  = rng.uniform(FL, FU, size=size)
+    return lognorm.ppf(u, s=s, loc=loc, scale=scale)
 
 
-def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name='', results_path=None, type='input'):
+def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None, param_name=None, dist_name='', results_path=None, type='input', truncation=None):
     """Plots the fitted distribution's CDF and PDF along with input percentiles, inputs:
         x_percentiles (list or np.array): The x-values at given percentiles (e.g., [LE, BE, HE]).
         percentiles (list or np.array): Percentiles corresponding to x_percentiles (e.g., [0.05, 0.5, 0.95]).
@@ -503,8 +505,27 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
     else:
         # Compute CDF and PDF
         fitted_dist = dist(*params)
-        cdf = fitted_dist.cdf(x_vals)
-        pdf = fitted_dist.pdf(x_vals)
+        cdf_vals = fitted_dist.cdf(x_vals)
+        pdf_vals = fitted_dist.pdf(x_vals)
+
+        # If truncated log-normal has been used to enforce a maximum
+        if truncation is not None:
+            a, b = truncation
+            Fa = fitted_dist.cdf(a) if np.isfinite(a) else 0.0
+            Fb = fitted_dist.cdf(b) if np.isfinite(b) else 1.0
+            Z = max(Fb - Fa, np.finfo(float).eps)  # guard against zero width
+
+            # Truncated CDF/PDF
+            cdf = np.clip((cdf_vals - Fa) / Z, 0.0, 1.0)
+            in_support = np.ones_like(x_vals, dtype=bool)
+            if np.isfinite(a):
+                in_support &= (x_vals >= a)
+            if np.isfinite(b):
+                in_support &= (x_vals <= b)
+            pdf = np.where(in_support, pdf_vals / Z, 0.0)
+        else:
+            cdf = cdf_vals
+            pdf = pdf_vals
 
         # Plotting
         # if type == 'input': # not plotting fitted distribution for outputs as percentiles are now based on actual data and it distracts from the final figure
@@ -531,7 +552,24 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
         if x is not None and len(x) > 0:
             if type == 'input':
                 ax[0].scatter(x, probs, color='blue', label='Input Percentiles')
-                ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
+                # Ensure PDF values for markers respect truncation if present
+                if truncation is not None:
+                    a, b = truncation
+                    # Compute truncated pdf at x
+                    fx = fitted_dist.pdf(x)
+                    Fa = fitted_dist.cdf(a) if np.isfinite(a) else 0.0
+                    Fb = fitted_dist.cdf(b) if np.isfinite(b) else 1.0
+                    Z = max(Fb - Fa, np.finfo(float).eps)
+                    in_support_x = np.ones_like(x, dtype=bool)
+                    if np.isfinite(a):
+                        in_support_x &= (x >= a)
+                    if np.isfinite(b):
+                        in_support_x &= (x <= b)
+                    pdf_x = np.where(in_support_x, fx / Z, 0.0)
+                    ax[1].scatter(x, pdf_x, color='blue', label='Input Percentiles')
+                else:
+                    ax[1].scatter(x, fitted_dist.pdf(x), color='blue', label='Input Percentiles')
+            
             elif type == 'output':
                 ax[0].scatter(x, probs, color='blue', label='Output Percentiles')
                 ax[1].vlines(x, ymin=0, ymax=ymax, color='blue', linestyles='--', label='Output Percentiles')
