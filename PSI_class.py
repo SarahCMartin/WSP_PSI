@@ -191,12 +191,12 @@ class PSI:
                     # print(int_yield_stress_res, int_vert_eff_res)
 
                     # Max previous for subsequent SHANSEP calc will come from int_yield_stress_res[0] as strength will be defined by the past load history rather than loading phases applied during installation, hydrotest, etc.
-                [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_hydro, self.z_res, B_res)
+                [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, self.Lat_res_suction, self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, self.ka, self.kp, [], [], self.z_hydro, self.z_res, B_res, self.Spanning, self.span_ratio, self.coeff_fenhance)
                 # else: 
                 #     [ff_lat_res_UD_temp[model], self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, self.alpha, int_yield_stress_res[0], int_vert_eff_res[0], insitu_calc_depths, insitu_su_inc, self.gamma_sub, self.int_SHANSEP_S, self.int_SHANSEP_m, [], [], [], self.z_hydro, self.z_res, B_res)
         
             else: # Drained; fine to keep overriding y_lat_brk as it is unrelated to strength parameters
-                [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.phi, self.delta, [], self.z_res, [])
+                [self.ff_lat_res_D, self.y_lat_res] = PSI_frictionfcts.latres(PhaseNo, model, [], self.D, self.W_op, [], [], [], [], [], self.gamma_sub, [], [], [], [], self.phi, self.delta, [], self.z_res, [], self.Spanning, self.span_ratio, self.coeff_fenhance)
         
         if any(isinstance(k, (int, float)) and k < 10 for k in ff_lat_res_UD_temp.keys()):
             self.ff_lat_res_UD = apply_weighting(self.Lat_res_weighting, ff_lat_res_UD_temp, self.z_res, self.D)
