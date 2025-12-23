@@ -26,11 +26,14 @@ def latbrk(PhaseNo, Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_ma
         # Calculating breakout resistance from components
         # Equation separated into steps from suOC to F to ff as SAFEBUCK/DNV formula doesn't account for W_op not being fully transferred to the soilimmediately, and therefore over-estimates strength as W_op > W_empty ?> W_tranferred to soil during the previous consolidation stages
         int_su_lat_brk = int_SHANSEP_S*(OCR**int_SHANSEP_m)*int_vert_eff # strength using SHANSEP approach and vertical effective stress at the start of operation based omn the previous consolidation stages
-        if span_switch == 1: # considering spanning in terms of increasing the vertical effective stress (doesn't change OCR as it would cancel out seeing the max would also need spanning considered)
+        if span_switch == 1: # considering spanning in terms of increasing the vertical effective stress (this currently ends up cancelling out late as OCR needs to capture it to be fully correct)
             int_su_lat_brk = int_su_lat_brk/(1-span_ratio)
 
         # print(int_su_lat_brk)
         F_lat_brk_friction = int_su_lat_brk*gamma_rate*B # horizontal friction component of resistance per m length
+        if span_switch == 1: # reducing frictional component for reduced contact area due to spanning, will partly cancel out the strength increase from consolidation under higher weight, but either could prove to dominate
+            F_lat_brk_friction = F_lat_brk_friction*(1-span_ratio)
+
         if Lat_brk_suction == 0: # not allowing for suction at the rear of the pipe
             F_lat_brk_remain = min(z,D)*(kp*su_passive + 0.5*gamma_sub*z)*gamma_rate # first z replaced with min(z,D) as noted above, second z remains as it relates to the weight of soil above the base of the pipe
         else:
@@ -149,7 +152,7 @@ def latbrk(PhaseNo, Lat_brk_model, Lat_brk_suction, D, W, alpha, int_vert_eff_ma
         else: # span_switch == 1, accounting for spanning in weight increase generating frictional component and decreased contact reducing passive
             fenhance = coeff_fenhance[0]*span_ratio**2 + coeff_fenhance[1]*span_ratio + coeff_fenhance[2]
             F_lat_brk_passive = F_lat_brk_passive*(1-span_ratio)*fenhance
-            F_lat_brk_friction = np.tan(np.deg2rad(delta))*(W/(1-span_ratio)) #(max(0, ((W/(1-span_ratio)) - np.tan(np.deg2rad(delta))*F_lat_brk_passive)))
+            F_lat_brk_friction = np.tan(np.deg2rad(delta))*W #(max(0, ((W/(1-span_ratio)) - np.tan(np.deg2rad(delta))*F_lat_brk_passive))) # no not need to increase weight by span ratio as contact length will be proportionally decreased
         # Breakout resistance from components
         F_lat_brk = F_lat_brk_passive + F_lat_brk_friction
         ff_lat_brk = F_lat_brk/W # friction factor is ratio of resistance to vertical force

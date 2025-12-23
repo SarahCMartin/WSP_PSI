@@ -579,7 +579,7 @@ def plot_distribution_fit(x_percentiles, percentiles, dist, params, samples=None
                     mean = loc + scale * np.exp(0.5 * s**2)
                     var  = (scale**2) * (np.exp(s**2) - 1.0) * np.exp(s**2)
                     std  = np.sqrt(var)
-                    text = f"Mean, $\mu_{{\\mathrm{{lognorm}}}}$ = {mean:.2f}\nSD, $\sigma_{{\\mathrm{{lognorm}}}}$ = {std:.2f}"
+                    text = f"Mean, $\mu$ = {mean:.2f}\nSD, $\sigma$ = {std:.2f}"
                     ax[0].text(0.04, 0.96, text, transform=ax[0].transAxes, fontsize=10, fontweight='bold', ha='left', va='top', multialignment='left')
 
     # Set y-limits for plots
