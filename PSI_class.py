@@ -78,6 +78,22 @@ class PSI:
         self.zD_hydro = self.z_hydro/self.D # normalised embedment
 
         ###########################################################################
+        # Touch-down Zone Manual Corrections
+        # Making correction prior to post-hydrotest consolidation as increased weight for consolidation will maximise strength and higher resistance at TDZ is conservative (as designer wants buckle to form on the adjacent buckle initiation structure)
+        if self.TDZ_Wmultiplier != 1:
+            # Embedments set at half of far-field embedment to represent average over transition zone from far-field to 0 before span onto buckle initiation structure (requested by McDermott for Ichthys Phase 2c)
+            self.z_aslaid = self.z_aslaid/2
+            self.zD_aslaid = self.z_aslaid/self.D
+            B_aslaid, _ = PSI_embedment.emb_geometry(self.z_aslaid, self.D)
+            self.z_hydro = self.z_hydro/2
+            self.zD_hydro = self.z_hydro/self.D
+            B_hydro, _ = PSI_embedment.emb_geometry(self.z_hydro, self.D)
+            # Weights for friction factor calculations based on multiplied weight corresponding to max pressure at a point in the TDZ (requested by McDermott for Ichthys Phase 2c)
+            self.W_empty = self.TDZ_Wmultiplier*self.W_empty
+            self.W_hydro = self.TDZ_Wmultiplier*self.W_hydro
+            self.W_op = self.TDZ_Wmultiplier*self.W_op
+
+        ###########################################################################
         # Consolidation During Hydrotest and Until Operation (incl. time flooded and empty)
         PhaseNo = 4
         [hydro_calc_depths, hydro_su_inc] = PSI_soils.strength_profile(self.Emb_aslaid_model, self.Emb_hydro_model, self.Lat_brk_model, self.Lat_res_model, self.Emb_res_model, self.Ax_model, PhaseNo, self.D, [], [], [], [], [], [], self.z_hydro, postlay_calc_depths, su_consol_postlay, 0, [])
@@ -164,6 +180,12 @@ class PSI:
 
         ###########################################################################
         # Lateral Residual Resistance
+        
+        # Touch-down Zone Manual Corrections
+        # Changing back to normal weight to get residual embedment corresponding to far-field
+        if self.TDZ_Wmultiplier != 1:
+            self.W_op = self.W_op/self.TDZ_Wmultiplier
+
         PhaseNo = 6
         if 0 in self.Lat_res_model or 2 in self.Lat_res_model or 10 in self.Lat_res_model: # methods which require instantaneous embedment into undisturbed soil profile to be calculated
             [self.z_res, B_res] = PSI_embedment.embedment(PhaseNo, self.Emb_res_model, self.D, self.W_op, self.alpha, [], [], self.z_ini, self.gamma_sub, insitu_calc_depths, insitu_su_inc, lat_su_inc, self.phi)
@@ -177,6 +199,16 @@ class PSI:
             B_res = B_op_eff
 
         self.zD_res = self.z_res/self.D # normalised embedment
+
+        # Touch-down Zone Manual Corrections
+        # Changing back to weight corresponding to maximum contact pressure for friction factor calculations (requested by McDermott for Ichthys Phase 2c)
+        if self.TDZ_Wmultiplier != 1:
+            # Embedments set at half of far-field embedment to represent average over transition zone from far-field to 0 before span onto buckle initiation structure (requested by McDermott for Ichthys Phase 2c)
+            self.z_res = self.z_res/2
+            self.zD_res = self.z_res/self.D
+            B_res, _ = PSI_embedment.emb_geometry(self.z_res, self.D)
+            # Weights for friction factor calculations based on multiplied weight corresponding to max pressure at a point in the TDZ (requested by McDermott for Ichthys Phase 2c)
+            self.W_op = self.TDZ_Wmultiplier*self.W_op
 
         ff_lat_res_UD_temp = {}
         for model in self.Lat_res_model:

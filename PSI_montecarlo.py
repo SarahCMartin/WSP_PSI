@@ -38,7 +38,7 @@ start = time.time() # Start timing after selection of the excel file to accurate
 
 ###########################################################################
 # Read Monte Carlo and Model Selection Parameters from Excel input file
-var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct', 'Berm', 'Spanning']
+var_names = ['No_rolls', 'Emb_aslaid_model', 'Emb_hydro_model', 'Lat_brk_suction', 'Lat_res_suction', 'Emb_res_model', 'Cyc_model', 'N50', 'su_profile', 'z_su_inv', 'Output_dist', 'Model_fct', 'Berm', 'Spanning', 'TDZ_Wmultiplier']
 d = {name: Common.find_var_value(input_data, input_data_str, name) for name in var_names} # dictionary containing constant parameters
 
 # Handle special logic for z_su_inv
