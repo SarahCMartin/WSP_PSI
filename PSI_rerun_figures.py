@@ -76,6 +76,7 @@ for entry in results:
 ###########################################################################
 # Plotting results and fitting distributions to them
 to_fit_and_plot = ['zD_aslaid', 'zD_hydro', 'zD_op_eff', 'zD_res', 'ff_lat_brk_UD', 'ff_lat_brk_D', 'ff_lat_res_UD', 'ff_lat_res_D', 'ff_ax_UD', 'ff_ax_D']
+to_compare = [('zD_aslaid', 'zD_hydro'), ('zD_hydro', 'zD_op_eff'), ('zD_hydro', 'zD_res'), ('ff_lat_brk_UD', 'ff_lat_brk_D'), ('ff_lat_res_UD', 'ff_lat_res_D'), ('ff_ax_UD', 'ff_ax_D'), ('ff_lat_brk_UD', 'ff_lat_res_UD'), ('ff_lat_brk_UD', 'ff_ax_UD'), ('ff_lat_brk_D', 'ff_lat_res_D'), ('ff_lat_brk_D', 'ff_ax_D')]
 
 cyclic_keys = ['ff_lat_berm', 'ff_lat_cyc', 'ff_ax_cyc']
 for key in cyclic_keys:
@@ -88,8 +89,9 @@ for key in cyclic_keys:
 
 Output_dist = results[0]['inputs']['Output_dist']
 Model_fct = results[0]['inputs']['Model_fct']
-Common.process_results(list_results, Output_dist, to_fit_and_plot, output_fig_path, Model_fct)
 
+Common.process_results(list_results, Output_dist, to_fit_and_plot, output_fig_path, Model_fct)
+Common.compare_results(list_results, Output_dist, to_compare, output_fig_path, Model_fct)
 Common.process_per_cycle(list_results, cyclic_keys, output_fig_path, Model_fct)
 
 os.chdir(parent_dir)

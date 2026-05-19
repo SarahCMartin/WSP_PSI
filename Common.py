@@ -316,6 +316,42 @@ def process_results(results, dist_str, chosen, output_folder=None, Model_fct=1):
                 print(f"{name} - LE: {x_percentiles[0]}, BE: {x_percentiles[1]}, HE: {x_percentiles[2]}")
 
 
+def compare_results(results, dist_str, chosen_pair, output_folder=None, Model_fct=1):
+    import numpy as np
+    import Distributions
+
+    # dist = Distributions.dist_map(dist_str)
+    output_fit_params = {}
+    percentiles = [0.05, 0.5, 0.95]
+
+    for x_name, y_name in chosen_pair:
+        x_info = results.get(x_name)
+        y_info = results.get(y_name)
+
+        if x_info and y_info: # Only continue if the names corresponded to variables in 'results' to be able to extract data
+            x_percentiles = np.nanquantile(x_info, percentiles, method='linear')
+            y_percentiles = np.nanquantile(y_info, percentiles, method='linear')
+
+            if np.isnan(x_percentiles).any():
+                print(f"No or insufficient information to fit distribtuion for {x_name}")
+            if np.isnan(y_percentiles).any():
+                print(f"No or insufficient information to fit distribtuion for {y_name}")
+
+            else:
+                if Model_fct != 1: # If model factor is 1, no change to the results therefore no step here
+                    x_BE = x_percentiles[1]
+                    x_new_info = (x_info - x_BE)*Model_fct + x_BE
+                    x_info = x_new_info
+                    x_percentiles = np.nanquantile(x_info, percentiles, method='linear')
+                    
+                    y_BE = y_percentiles[1]
+                    y_new_info = (y_info - y_BE)*Model_fct + y_BE
+                    y_info = y_new_info
+                    y_percentiles = np.nanquantile(y_info, percentiles, method='linear')
+
+                plot_comparisons(percentiles, x_name, x_info, x_percentiles, y_name, y_info, y_percentiles, output_folder)
+
+
 def process_per_cycle(results, chosen, output_folder=None, Model_fct=1):
     import numpy as np
     import Distributions
@@ -391,6 +427,36 @@ def plot_by_cycle(param_name, cyc, LE, BE, HE, output_folder):
     from datetime import datetime
     time_stamp = datetime.now().strftime('%Y%m%d_%H%M') # Generate a date-time stamp
     save_name = f'{param_name}_Evolution_by_Cycle_{time_stamp}.pdf'
+    save_path = output_folder / save_name
+    fig.savefig(save_path, bbox_inches='tight')
+    plt.close(fig)
+
+
+def plot_comparisons(percentiles, x_name, x_info, x_percentiles, y_name, y_info, y_percentiles, output_folder):
+    import matplotlib.pyplot as plt
+    import PSI_resultformat
+
+    fig, ax = plt.subplots()
+    x_lims = [min(x_info)*0.9, max(x_info)*1.1]
+    y_lims = [min(y_info)*0.9, max(y_info)*1.1]
+
+    ax.scatter(x_info, y_info, marker='o', color='black', label='Actual Values')
+    ax.plot([x_percentiles[0], x_percentiles[0]], y_lims, color='blue', linewidth=2, label='LE (5%)')
+    ax.plot([x_percentiles[1], x_percentiles[1]], y_lims, color='grey', linewidth=2, label='BE (50%)')
+    ax.plot([x_percentiles[2], x_percentiles[2]], y_lims, color='red', linewidth=2, label='HE (95%)')
+    ax.plot(x_lims, [y_percentiles[0], y_percentiles[0]], color='blue', linewidth=2, linestyle='--', label='LE (5%)')
+    ax.plot(x_lims, [y_percentiles[1], y_percentiles[1]], color='grey', linewidth=2, linestyle='--', label='BE (50%)')
+    ax.plot(x_lims, [y_percentiles[2], y_percentiles[2]], color='red', linewidth=2, linestyle='--', label='HE (95%)')
+
+    ax.set_xlim(x_lims[0], x_lims[1])
+    ax.set_ylim(y_lims[0], y_lims[1])
+
+    ax.legend()
+    fig.tight_layout()
+
+    from datetime import datetime
+    time_stamp = datetime.now().strftime('%Y%m%d_%H%M') # Generate a date-time stamp
+    save_name = f'{x_name}_vs_{y_name}_{time_stamp}.pdf'
     save_path = output_folder / save_name
     fig.savefig(save_path, bbox_inches='tight')
     plt.close(fig)
